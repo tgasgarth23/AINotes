@@ -1,0 +1,83 @@
+Title: VoiceToNotes Design Document
+
+1. Introduction
+VoiceToNotes is a web app that aims to make the process of taking notes from audio recordings more efficient and less time-consuming. It will be primarily used by students to record lectures and professionals during meetings to create summarized notes from the recordings.
+
+2. Objective
+The objective of VoiceToNotes is to provide a user-friendly platform that can convert audio recordings of lectures or meetings into summarized, structured notes, while maintaining accuracy and context.
+
+3. Features
+
+3.1. User Authentication
+- Sign up and sign in functionality
+- Password recovery mechanism
+- Integration with Google, Facebook, and other third-party authentication providers
+
+3.2. Audio Recording
+- In-app audio recording with start, pause, and stop functionality
+- Compatibility with various audio formats (mp3, wav, etc.)
+- Option to upload pre-recorded audio files
+- Option to upload videos
+
+3.3. Audio Transcription
+- Automatic speech recognition (ASR) to convert speech into text
+- Support for multiple languages
+- Ability to handle different accents and dialects
+- Noise filtering and reduction
+
+3.4. Note Summarization
+- Natural language processing (NLP) algorithms to identify key points and summarize the content
+- Customization of summarization level (high-level overview, moderate, or detailed)
+- Export to various file formats (PDF, Word, etc.)
+- Timestamps to the video or audio file for key moments
+
+3.5. Note Organization
+- Ability to organize notes by date, topic, or custom tags
+- Search functionality for easy retrieval of notes
+- Integration with popular note-taking apps (Evernote, Google Keep, etc.)
+
+3.6. Collaboration
+- Option to share notes with fellow students or colleagues
+- Real-time editing capabilities for shared notes
+- Comment and annotation functionality
+
+3.7. Accessibility
+- Responsive design for compatibility with various devices (mobile, tablet, desktop)
+- Dark mode for reduced eye strain
+- Support for screen readers and other accessibility tools
+
+4. Technical Architecture
+
+4.1. Front-end
+- Python Django for building the user interface
+- Redux for state management
+- Material-UI for UI components and styling
+- Axios for API requests
+
+4.2. Back-end
+- Python Django with Express for server-side logic
+- RESTful API for communication between front-end and back-end
+- MongoDB for database storage
+
+4.3. Third-Party APIs and Services
+- OpenAI Whisper for speach to text
+- OpenAI GPT-4 for NLP and summarization
+- Firebase or Auth0 for user authentication
+
+5. Development Plan
+
+5.1. Milestones
+1. Set up project structure and development environment
+2. Implement user authentication system
+3. Implement audio recording and uploading functionality
+4. Integrate ASR and transcription services
+5. Develop note summarization algorithm
+6. Implement note organization and search functionality
+7. Add collaboration features
+8. Ensure accessibility and responsiveness
+9. Thorough testing and bug fixing
+10. Deploy the app to a production server
+
+
+6. Conclusion
+VoiceToNotes aims to revolutionize the way students and professionals take notes during lectures and meetings. By providing a platform that records, transcribes, and summarizes audio content, VoiceToNotes will save users time and effort while ensuring they have accurate, concise notes at their disposal.
