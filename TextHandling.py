@@ -42,7 +42,7 @@ def gpt_4_summarize(input_file, output_file, max_length=14000):
 
 # Example usage
 input_file = "input.txt"
-output_file = "Lectures/Lecture 04: Embarrassingly Parallel or Not.md"
+output_file = "George W Bush Speech.md"
 
 markdown_summary = gpt_4_summarize(input_file, output_file)
 # print(markdown_summary)

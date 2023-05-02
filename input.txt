@@ -1,1 +1,474 @@
-All right. Welcome back, everyone. How's it going? Getting through it. All right. Midway through week two now, so I guess, I don't know, maybe next week we'll be hitting our stride and getting more in the swing of things. But yeah, the plan for today is to talk about things that are called embarrassingly parallel and things that are not. So. Yeah, that's that's kind of the plan and will understand what that word means. I don't know. It's kind of a fun phrase. And yeah, let's jump into it. But first a couple of announcements. First of all, a homework assignment has been posted. I had originally hoped that everything would be set up with this HPC clusters. So this is the high-performance computing cluster that Amherst College just acquired. And it's literally like just this semester getting up and running. And it'll be a fun resource that will have access to going forward in the class. But not everything is set up with it yet in terms of the documentation. So ignore everything on assignment one that asks you to compare the performance of your program on your computer to the performance on the HPC cluster, because I don't know that everything will be ready to go in the next day. The state of where things are with the cluster right now is that you should all have accounts. I don't think that you would have gotten a notification that you have an account, but you will have an account on this machine. So the documentation that I'm waiting on slash putting together is how you get access to it from your computer. So you can look, if you want to read about the cluster, you can go to this website, HPC dot Amherst dot edu. And it'll tell you a little bit about the cluster, what its capabilities are, all of that stuff. There's some documentation for it, but specifically what's missing from the documentation is how to access it from the terminal or from the shell. And that's exactly what we're going to need for this class. But if you already are comfortable doing remote login, doing SSH and all of that stuff. You can log into it this way. So you can use your Amherst ID, so like your email handle. So if you do SSH Amherst ID at HPC diameters dot edu, you'll login to the machine and you'll have access to a state-of-the-art supercomputers that we now own. So that's pretty cool. And hopefully by next week, everything will be together that I'll have tutorials and stuff to help you learn how to use it. And then we'll be able to have this shared resource that we can use to benchmark our programs and see, um, how parallelism really helps. Even more when you have this supercomputer at your disposal than just using your laptop, although you will already see a huge performance boost just in your laptop depending on what task we're looking at. So that's the state of things with the first programming assignment. So you'll have a fairly short written assignment due next week. So I'll post this over the weekend. And it'll just be two or three questions. Conceptual questions about stuff that we've been talking about in lecture. And it'll have a question or two related to some of the readings as well. So keep an eye out for that. Then also office hours. So I think my schedule is more or less finalized now. And also the TA for the course, Mary Kay, will be having drop-in office hours. So she offered Wednesday evening seven to 09:00 P.M. and these will be just in the computer labs. So like down at the end of this hallway here in seed 109, there's like a computer lab that we don't we don't usually use it too much for courses, but it's available for office hours. So that's another resource for you. And then I'm going to have my individual office hours by appointment On Thursdays 1-230. This afternoon. I'll I'll post a sign-up sheet so you can sign up for a 15-minute one-on-one slot with me. And those can be either in person or on Zoom depending on your availability and all of that. So cool. I think that's it for administrative stuff. Any questions administrative wise before we jump into new material? For what? Yeah. Yeah. So those will be like drop-in office hours after class as well. So that's those, those will all be the same. Cool. Awesome. Alright, so yeah, let's talk outline for the day. So we'll have go over this activity that I handed out at the end of class on Friday. We can talk about that. Oh, by the way, you can set up a thing so you could submit this to Moodle. If you also wrote some workout by hand. You can give that to me whenever, during lecture now. Yes, so we'll talk about that. I wanted to talk a little bit more about the difference between parallelism and concurrency. Because they think that this is a distinction that is, well, it's something that's worth understanding the differences between these ideas and how they relate to each other and which ones introduce problems and which ones don't. We'll talk about embarrassingly parallel computation. And then we'll talk about limits of parallelism. So that'll be what we worked through today. So let's talk about this activity from the last lecture. We had this method that was just increment. So what does it do? It takes an array called a, and it just, each method goes through an increments the value of the array at each index. So we just have a while loop. So this is just increment the value of the array. Then we just have this variable i that keeps track of where we are. And so there was this, note that this variable a, this is shared between threads. This is an object that's being concurrently modified by more than one process, but then the other variables that are not arguments to this method. So in particular I, this is what's called a thread local variable. When you write a multi-threaded program in Java and you write your run method, every variable that you declare inside of the method is local to that thread. If you have two threads, both running this code, they both have a variable called i that is defined inside of the method. They each have their own variable, ie. There's no communication between multiple threads for anything declared inside of the thread. Inside of its definition. The only way that threads can communicate with each other and interact with each other is if you explicitly give them a shared object. So in this case, the shared object is a, this, this array that's being passed into as an argument, this increment method. So it's the same array being modified by multiple threads. But all of the surrounding code, like the keeping track of the integer I, doing the logic of the while loop, all of that, that is happening independently for each thread. There's no crosstalk between them. So this is a method. We're just taking this array and we're incrementing each value of it, whatever was there previously, we want to increment that value by one. The first question was, let's say I give it an array with four zeros in it. And we have two threads that are concurrently calling this, this increment method. So the question is, what are the possible outcomes? What are the possible value that I could get? Four possible, I guess, sequence of four values that I could get from this array a. So, yeah, Who wants to start us off? What is a possible outcome? But if I run this code with two threads that I could see. Yeah, cool. So we get star, star, star, star. So we get an r array is, is a four values again. And each star could be one or two. Let's just say like, let's, let's take things a little bit closer and look just at this first value. So how could it be that this value would end up being one when both threads complete? What would the execution B? Yeah. Uh-huh. Nice. So they both, if both threads are doing exactly the same thing at exactly the same time. So they both start at I equals zero. They both enter the while loop at the same time, and they both hit this first instruction at the same time. Ai equals Ai plus one. Then we have to be really careful about what's going on here because what is actually happening with each thread wants reading the value a of I, it's adding one to it. And then it's writing the new value. So we have one read and one right, with the shared memory. So we can have, right, So if we had, let's make a little diagram here. So here's thread one, thread two. So maybe we have the following thing. So in the very first kind of logical step, T1 reads a of one, a of zero. That's the first thing that happens. And then the next step is that T2 reads a of zero, a of zero. So now they both see the value zero because that was the original value. And then they, they both incremented. So increment. Then maybe this one increments. So now they both read this value zero. They both incremented the value zero. So then at the end, at this stage they both are storing the value one. And then they both right one. So maybe the first thread writes first, so right one. And then right one. Okay? So if we did everything in this sequence, we would get one is written by both of the threads. So one of them wins. It doesn't matter which 11. But either way, no matter which one wins, the value that gets written as one. This is one possibility. So how can it be the case that I end up with the value two? Yeah. Oh yeah. Yeah, things are either not. So we're each, so each thread is only incrementing each index once. It's time to find out through one. So after one iteration, each thread will have access to every value in the array exactly once. So if it started at zeros, if, say thread one comes along and does all of its actions. So if we just had one thread, what would the array b after that? After just one thread did its thing. Well, so thread one comes along and it does all of these, does this whole while loop. The first iteration of the while loop increments the first value of the array. The second increments, the second value, the third increments the third value, the fourth increments the fourth value. After one thread. Does these instructions. The array is 1111. Then if the second array comes along or the second thread comes along and does the same action after the first thread is finished. The second thread comes along and increments all of the values again. So it increments the first value to it increments the second value to two, it increments the third value to two and so on. Sure. Yeah, that could be the other option. So this is I guess I explained already how we can get to them. So this would give us one. If we have this execution to get to e.g. we could have the first thread reads a of zero increments and then writes. So then the value becomes one. Then the second thread reads the one increments and then writes so two. Then we would end up with a two. And the idea is that because I don't know how the individual steps are interleaved with one another. If I could get a value of one or two for the first index, I could get a value of one or two for the second index and so on, any combination of these values as possible. So this is a really dangerous piece of code. Like this is something that, you know, it, it looks totally fine from the perspective of writing a single-threaded program. But there's a huge amount of non-determinism see in this, even though there's only four steps that are being performed, the possible number of outcomes of this computation for two threads is two to the fourth power. So there's whatever that is, 16 different possible outcomes, even though I have this very simple code. So this is one of the challenges. Again, reasoning about concurrent programs is that is that I have many possible outcomes that I need to reason about. And maybe I don't want to have this much non-deterministically and what my program is actually doing. Cool. So any questions about this example? Let's jump to the next one. So now instead of just two threads, Let's say I have k threads. So ten threads, 20 threads, 400 threads. What are the, how many possible outcomes are there? What are the possible values that I could get? Yeah. Yeah, so each index could store any value from one to K. So how could I get, let's say K is ten. How can I get a value of six? What could my execution looked like in the first, in the first a of zero. Check that happen. Yeah. Okay. Nice. Yeah. So I guess I can get up to six by just having the first six, or I guess maybe we want to have the first five threads read and write in sequence. So the first thread reads and writes. The second thread reads and writes, The third thread reads and writes. So let's see, first five threads read increment right? In succession. Okay, so the first one finishes its thing, the second one finishes its thing, and so on. So now the value stored is five. Then the next five threads all read. Last five threads all read. They all read the value five. And then the last five threads, all right? I guess they read and then increment. Then the last five threads will all right the value six. There's nothing special about K equals ten and value equals six, right? Like we can make this same sort of the same sort of behavior for any value of k, for any, for any numerical value that we want to get between one and k. So why couldn't it be the case that we would ever get a zero in one of these? Yeah. Uh-huh. Yeah. So no matter what, when I read I read a value that's at least zero, right? And no matter what, when I write, I write a value that's one bigger than what I read. So if the smallest value that I could read is zero, the smallest value that I could write as one. No thread is ever going to write zero. But again, this is something that like in this case, I think it's it's fairly simple to reason about. But things get complicated, things get settled very quickly. So it's important to like, check every every step of the way. Like, why is it the case that I couldn't get a different answer? You have to convince yourself that and that's what we're going to spend a substantial amount of time next week doing when we talk about mutual exclusion, is trying to reason about all possible executions of programs that are not too much more complicated than this. But we'll see that they're immensely subtle. So is everyone happy with these examples? Any questions? Alright, awesome. Yeah. So the last five grades are reading and then writing. How is it that the right ovaries? They will? And this was what the model of computation that we talked about on Friday is that we have these atomic operations of read and write. But when you write something to a memory location and somebody else writes after you, they overwrite what you wrote, and you have no way of knowing that as a threat unless you try to read again later. But you don't have control over whether you read before or after they wrote. So you still don't know, like there's always this uncertainty about what the true state of the computer's memory is. No one ever has a like a, a complete view of the state of the system at any given time. Because they're not checking that. Only Exactly, yeah. Yeah, it was there another question? Yeah. Yeah. Right. So this is from the RAM model that we talked about before. We have what's going on in memory. And that's where a is stored. Then we have our CPU that has a few cores on it. So each of these is a core. So each core reads the memory value and the increment happens in the CPU. So it's some register in the CPU that's not part of the shared memory, that reads the value a or whatever it is, and then increments it so it stores it to a register in the CPU. And each thread, Each, each core has its own version of what it reads, what it increments, and then what it's going to write. And then there's this interaction where it actually writes the value back to the shared memory, The incrementation. So there's kind of two different places of memory. There's the shared memory that stores the value of the array. Then there's the individual registers in the cores store the US very small number of values that are currently being operated on. So yeah, there is a set that, right like this. These are where there's no crosstalk between the registers of the CPU. It's that each thread has its own, has full access to all of the registers associated with that core. Cool, Awesome. Great. So yeah, parallelism versus concurrency. So again, two words that I'll say a lot. And so I wanted to just give one more kind of sense of what the difference between these are. So concurrency means that I perform multiple tasks that occupy overlapping time intervals. So if I look at a schedule of myself for a semester. So we started what On January 30th. And when does the semester and like May 15th or something like that. Let's say it's May 15th. I look at what I'm teaching over that time. So over that time, I am teaching this course to 73. I'm also teaching this visualization course to 25. So in some sense, right, like I'm teaching these courses at the same time because I'm teaching them in the same semester. But if I look at my actual schedule of what I'm doing when I am doing work. I'm not working at the same like I'm not making progress towards working on both of these classes at the same instant. If I look at my day schedule. So here's Wednesday. This is me. This is well, So 10-1050. This time is blocked out four to 73. And then I have a little break. And then 2-320 this time is blocked out for and I should use a different color. I guess. This time is blocked out for 225. So in terms of my resource, my own resources, I am, I might have different threads, right? Like I have different pieces of different directories on my computer that I modify different sets of slides for these different courses. But at any given instant of time, I am only actively making progress on one of these courses at a time. These courses are being offered by me concurrently because they start and finish at the same times and those time intervals overlap. But I'm not working on these classes in parallel. Because at any given instance, I am only performing operations on one, for one of these classes at a time. So this is concurrency is that I have two classes that occupy the same interval of my time of my life. But at any given instance, my schedule only allows me to be teaching one class. I can only be physically present in a single classroom. I am one process operating on two threads. I have a thread for this course, I have a thread for my other course. So even though there's only one process that is active me, I am I'm operating on these courses concurrently. I haven't I haven't finished teaching to 25 when I'm teaching 273 or vice versa. That's what we mean when we say concurrency, is that I have two programs that are running at with overlapping intervals. On the other hand, we could have parallelism. Parallelism is the ability to make progress on multiple tasks at precisely the same time. E.g. this course, I know conflicts with Galois theory math courses being offered. I know that because one of you asked if I could move this class. But yeah. So these two classes are being taught at the same time slot by two different professors, right? So we have, if I look at Wednesday, so here's Wednesday. And I look at the ten to 11 slot. Here is computer science to 73. And here is math. For ten. We have two professors to processors are two processes that are working on these tasks at the same time. Both of these courses are being offered at the same time. This is an example of course, there's, of course is being offered in parallel. So again, two different courses, but they are actually being taught. There's progress being made towards both of them at the same time. And that's an example of parallelism. So if we have two professors, we can teach twice as many courses at precisely the same time. So whenever we have a parallel execution of something, it needs to be a concurrent execution as well. Because we can be doing these multiple tasks at the same time. But a concurrent execution doesn't have to be done in parallel. Concurrent execution just means that I have multiple programs running at the same time that haven't both where one doesn't complete before the other starts. Yeah. So there's like I would say their schedules can interleave is the way that the the I guess the word that gets thrown out is that you have these interleaving pieces of the execution. So I say work on this thread for a little while, then work on this thread, then go back to the first thread, then go back to the second thread. And the exact order in which these, these, these operations are interleaved with one another is not determined by the programmer. Again, in this case, it's determined by the operating system or whoever is executing the threads. So it wouldn't be entirely right? Yeah, I mean, like you can say, right. So maybe that's one way of saying it, right? Like there's a discontinuity and like I perform some operations and then I stopped for a while and let let somebody else do their operations. Yeah, Sure, Cool. Awesome. So right, so this is the difference between concurrency and parallelism, right? So why, why do we want to reason about both of these? Why are these related topics so, well, we have this one relation that a parallel execution is automatically a concurrent execution. But we can have concurrency without parallelism. But in terms of why we like parallelism, parallelism can give a performance boost, right? So if I can do more than one thing at a time, if I can make progress on more than one task at a time, I can perform all the tasks that I need to do in less time overall, I can decrease the latency of performing these tasks. And that's one of the big, one of the big focuses of this class. But on the other hand, concurrency, like you probably haven't done concurrent program or I don't assume that you've seen concurrent programming before this class. But it's necessary for like, really basic functionality in a computer. Like even if you think about it, what does a computer do? So it has an operating system. The operating system manages the computer's resources and it tells which programs to run. There's a separate program that monitors the track pad on my computer. There's a separate program that displays information on the screen of my computer. There's a separate program that allocates resources for other programs. Like at any given time, I've many programs running concurrently on my computer. Even before computers had parallel hardware, it was possible to do that by doing exactly what we do with our own lives and scheduling things. Which is, you block some resources to work on one class, then you block some resources to work on another class and so on. And so even if we, even if we don't want to get this performance boost, that is how I'm trying to sell this material to you. It's still necessary to reason about concurrency at the level of operating systems. But again, unless you've taken a course on operating systems, you wouldn't necessarily have ever encountered. I'm like concurrency at this level because it tends to be that the operating system gives you the illusion that what you're doing when you write a single threaded or an ordinary program. It gives you the illusion that everything is happening in one go and that you have complete access to the computers resources. So concurrency is something that we need to deal with independent of trying to get the best performance out of parallel hardware. And so all of the issues that we've seen with nondeterminism are already there for concurrent programs. So these are not problems that are introduced by having multi-core processors. These are problems that are fundamental to computer science. At the operating system level, at the architectural level, we need to deal with concurrency. We need to be correct about it. Because the issues of correctness of these programs again, will fundamentally say whether or not our program is successful under all possible executions. So we have this great thing. Parallelism gives us extra performance. We have this necessary thing that concurrency is inherent to all interesting computer systems. And then we have this challenge. Nondeterminism makes things hard to reason about. Yeah. As far as we're going in this class, we, we're at the mercy of the operating system. Operating systems nowadays are very, very well tuned and optimized to deal with multi-threaded programs. And so hopefully that's what you'll see in the first, in the first lab is like if your computer has four cores, you will see almost exactly a fourfold increase in throughput if your computer, if you make four threads. And that's because again, the operating systems tend to be very good. They like, they're trying to squeeze out as much performance as they possibly can from your processor. And so it's incredibly wasteful to not do things in parallel if, if you, if you think you can. Cool. Well, yeah, again, it's not something we can control. It's just something that we can see what happens. So that's what I added at one of the things that's kinda fun in doing the labs for this course I think will be the, you know, you'll, you'll have a great idea of some way that you think will solve a problem faster. And then you do an experiment and say, nope, that's not what the operating system does or maybe it was already making some optimization under the hood that you were unaware of. And it's optimisation was better than the one that you've coded. So there's a lot of kind of tinkering, trial and error and stuff like that in the in the labs. Alright. So yeah, let's go back to where we were before. This was, had, the first experiment that we ran was this multithreaded counter. So I gave this counter object to a bunch of threads on my computer. You all did that. And when you said increment the counter 100 million times in total, so 25 million times each from four threads. And you got a final count that was somewhere in the neighborhood of 25 million. It wasn't doing what we wanted it to do. What the intended behavior for a counter should be. If I increment it 20 times, its count should be 21 and done. We didn't see that with the multi-threaded program. So does anyone have an idea? Are any ideas of how we could have we could fix this. Yeah, cool. So threads have own local counter and they just increment their own counter. It's not a shared resource. So everyone just increments it. And then at the end, when all of the threads are done, we just accumulate the values. So I just take all of the values that each thread came up with and sum them together. So this is really nice, right? Like, well, there are trade-offs. It's like everything. Yeah. So if you can do you can do k operations in parallel. All of the operations take the same amount of time. The individual operations have the same latency. Then, right? You can only get, in theory a k fold increase in the performance of the k fold increase in the latency. So your, your complexity might look something like if you have, I don't know, you're, you're running time of your algorithm is 0 of n squared. You can parallelize it perfectly. Then if we have K cores, we could do something like maybe 0 of n squared over k, where k is the number of cores that I can throw at the problem. So we can put that in the asymptotic number. But if you have a fixed constant number of cores, it doesn't change the asymptotic complexity. But sometimes reasoning about multi-threaded programs actually brings you to a solution that does have a faster running time. Not because of the parallelism, but because you're reasoning about the problem differently. Nice, Cool. So yeah, we want every increment count so we could just give everyone their own counter. And at the end, everything works. So this is what I call the easy solution. Each thread stores local count. Threads run until they're done. Then we aggregate the local counts when the threads terminate. So why might this not be sufficient? Why might there be a case where we can't just do this? Yeah. I know. Yeah. Yeah. So there is this issue of efficiency, right? Like if I have k core is now I need k counters, whereas before I only had one counter. So I am using more resources. A counter is just an int or a long or something like that. So it's probably not a huge deal to have an extra long associated with each a thread. But yeah, what are there any problems that you might be using a counter for that? Where you couldn't do this? Yeah. Nice. Yeah. So it could be that I have a problem that's ongoing right? Where I don't have an end. It can't wait for the threads to terminate. So here's like a, like a concrete example. Let's say I want to compute some statistics on a Twitter feed, not an individual's Twitter feed, but like all tweets that are happening, I want to count the number of occurrences of some word or phrase or hashtag. Right? This is not a program that I can wait until Twitter stops existing and then count the, well, maybe we could wait that long. Who knows? But like I can't just wait for the program to finish. I want to know how many count. What's what's my word count now? What's my word count in an hour? What's my word count in a month? So I could like maybe modify this so that every, every thread, everyone that's like reading these different partitions of the Twitter feed and give me their different values. But I might need to interact with the counts before threads are done. Or maybe what one thread does depends on the total count of everyone up to that point. So the programs, so it could be. So here are two possibilities, two reasons, there are many others. But one is that we might need intermediate counts. And another thing is that, right? Like this might be ongoing, so accounts could be ongoing. So there's no, no termination of the threads. And maybe different threads need to see the counts at different times. I see count during their execution. So there's a lot of reasons that this, If we just need a one-shot counter bunch of things and report the answer, we can just give everyone a local counter. But for some applications that might not be enough. So we'll return to this question next week with this problem that's called mutual exclusion. So we'll understand ways that we can. Kind of lock this counter so that only one thread has access to the counter at a time to modify it. When it's done doing its increments, it's done doing its modification. It'll unlock it, allowing another thread to do it. This is a huge, This is one of the fundamental problems in concurrent programming, is the mutual exclusion problem. We could spend months working on this one problem alone, but we'll give it at about two lectures instead. Okay? But I do want to go back to the easy solution because it's really nice. And it's an example of what are called embarrassingly parallel problems. Again, here's the contexts. So for my counter, let's say that I have a one-shot program. I just want to count a bunch of things. I know when I'm done and when I'm done, I just want to accumulate the answers. So this is an example of an embarrassingly parallel problem. So we say that a problem is embarrassingly parallel if it can be broken into many simple computations, almost all of which can be performed in parallel. So an example of this would be my local counters. I want to count up to 1 billion and I have ten threads that I can do that. I just say thread one, you take a tenth of the work thread to, you take a tenth of the work thread, three, you take attempted the work and so on. So I take my big problem, problem. I partitioned it into a bunch of pieces that can all be performed in parallel. And I give each of these to a different thread. These are my threads. Thread k. They all do their things in parallel. And then I merge the solutions together somehow. And the idea is that doing these individual parts of the problem is going to be where the bulk of the work is doing. And then once I have the solutions to these individual parts, merging the solutions back together as relatively quick. So that's when a problem is embarrassingly parallel is when I can break it down like this. So counting to 1 billion is that way. I count two, however high I need to count individually. You partition the counts up and then we just add everything together at the end. Okay, So in the last 5 min, I want to give you the example of an embarrassingly parallel problem that you'll be working on for this homework assignment. And so we want to start with this formula from high school. So I drew a circle inside of a box. And the area of the circle, something that I was forced to memorize at some point in my life, is that the area is Pi r squared. So what is r? R is the radius of the circle, half of it's diameter. The diameter of this box is two pi is this mathematical constant that shows up everywhere at 3.1, 415-92-6535 and so on. We want to like this is in some sense the definition of the value pi. But maybe, maybe I'm slipped up. Maybe I got some digits wrong here. I want to estimate this value of pi. So that's gonna be the goal of this assignment. So here's the strategy of the so-called Monte Carlo method. So the idea is to pick a random process to generate some random numbers and use those numbers in some clever way to estimate the value that we're looking for. So here's the experiment that we're running is I throw a bunch of darts at this square. Some of them are going to hit the circle. Some of them are going to miss the circle. But I'm just throwing darts, random numbers or random points in here. And the idea is that I can compute the area of the square. Then from this formula from high school, I know what the area of the circle is. So what's the area of the square? So this was two are the diameter of the square. What's its area for r squared? So the area of the square is for R-squared. Then what's the area of the circle from last from the previous slide? It's high R-squared. If I throw a dart at random at the square, the probability that it hits the circle is the ratio of areas. So the probability that a dart hits the circle is the area of the circle over the area of the square Pi r squared divided by four R squared. We can cancel out the R-squared. So we get pi over four. The idea of the Monte Carlo method is that I can estimate pi over four by throwing a bunch of darts, generating a bunch of random numbers, generating a bunch of random points, seeing the proportion of them that hit the circle. And that proportion is gonna be about Pi over four. And the more darts I throw, the closer I expect that value to be two Pi over four. So why is this process embarrassingly parallel? How, if I had 100 people, how could I do this experiment 100 times faster? Let's say I want to throw 1 billion darts. Yeah, Beautiful. Yeah, so everyone can have a fixed number of darts that they throw. They throw the darts. They tell me how many darts they threw. Me. Tell me how many of them hit the circle or landed within the circle. And then I just take all of those in aggregate them. I sum up the total number of darts thrown, I sum up the total number of hits, and I get a better estimate of pi much faster. I guess the same estimate faster. Then if I just asked a single person to throw a bunch of darts. So that's exactly what your first program is going to do. And this is again an example of something that is embarrassingly parallel. Because if I have 100 people, I can throw 1 billion darts 100 times faster because everyone just throws 10 million darts. So that's again the idea that the details are in the write-up on Monte Carlo method and the details for implementation or in the notes on multithreading. So that's again the experiment. And hopefully you'll see that if you have four cores on your computer and you run this with four threads, your program will run four times as fast. And yeah, so that's the plan. So what do we do next time? Next time we'll talk about problems that are not embarrassingly parallel. And how much of a performance increase we can expect to see in general for something that's more dependencies between the operations in this. Okay, so thanks everyone for coming out. And I will see you all on Friday. Oh, awesome. Yeah. If you have your activity, please, you can just leave it up here with me. That a question. Yeah.
+0:03
+there's no excuses
+0:10
+[Applause]
+0:21
+so
+0:33
+excuse me
+1:11
+i'm huh
+1:26
+is [Music]
+1:40
+[Applause]
+2:46
+is
+3:05
+[Music]
+3:12
+is
+3:20
+[Music]
+3:43
+to me
+4:00
+foreign [Music]
+4:51
+and on this basis of sovereignty fraternity friendship and cooperation with all other republics and with uh
+4:58
+countries abroad along this idea all political forces in ukraine are coming together and this is
+5:05
+the only thing that can guarantee stability so people uh in this room and outside of
+5:12
+this room representative of all ethnic groups who live in ukraine they feel
+5:17
+that the land of ukraine is the motherland and the water
+5:29
+so now here is the president of united states mr george bush
+5:41
+[Applause]
+5:48
+well first thank all of you for that warm welcome
+5:53
+and may i take this opportunity to thank all people of ukraine
+6:02
+that gave us such a warm welcome such a heartfelt greeting
+6:08
+every american in that long motorcade and believe me it was long
+6:15
+was moved and touched by the warmth of the welcome
+6:21
+of the people of ukraine we'll never forget it
+6:26
+chairman kopchuk thank you sir and to the deputies of the supreme soviet may i salute you
+6:34
+members of the clergy that are here members the diplomatic corps
+6:40
+representatives of american pharmaceutical and health care corporations who i understand are with
+6:45
+us today and distinguished guests all barbara and i are delighted to be here
+6:51
+very very happy we have only one regret and that is that
+6:57
+i've got to get home on thursday night i can still make it
+7:02
+the reason is our congress goes out uh tomorrow finishes their session
+7:08
+they're in now and i felt it was important to be there on that last day
+7:14
+of the final session this beautiful city
+7:21
+brings to mind the words of the poet alexander dotenko
+7:28
+the city of kiev is an orchard kiev is a poet kiev is an epic
+7:35
+key of his history he have his art centuries ago
+7:42
+your forebears name this country ukraine or frontier
+7:47
+because your steps link europe and asia but ukrainians have become frontiersmen
+7:53
+of another sort today you explore the frontiers and contours of liberty
+8:03
+though my stay here as i said is far too short i've come here to talk with you and to
+8:08
+learn and for those who love freedom every experiment in building an open
+8:14
+society offers new lessons and insights you
+8:21
+face an especially daunting task for years people in this nation
+8:27
+felt powerless overshadowed by a vast government apparatus
+8:36
+cramped by forces that attempted to control every aspect of their lives
+8:43
+and today your people probe the promise of freedom
+8:48
+in cities and republics on farms
+8:53
+in businesses around university campuses you debate the fundamental question
+9:01
+of liberty self-rule and free enterprise
+9:07
+americans you see have a deep commitment to these values
+9:14
+we follow your your progress with a sense of fascination
+9:19
+excitement and hope and this alone is historic
+9:26
+in the past our nations engaged in duels of eloquent bluff and
+9:31
+bravado and now the fireworks of superpower confrontation
+9:38
+are giving way to the quieter and far more hopeful arts
+9:43
+of cooperation i come here to tell you we support the
+9:49
+struggle in this great country for democracy and economic reform
+9:55
+and i would like to talk to you today about how the united states
+10:01
+views this complex and exciting period in your history how we intend to relate to the soviet
+10:07
+central government and the republican governments
+10:12
+in moscow i outlined our approach we will support those in the center and
+10:18
+the republics who pursue freedom democracy
+10:24
+and economic liberty we will discern determine our support
+10:30
+not on the basis of personalities but on the basis of principles
+10:37
+and we cannot tell you how to reform your society we will not try to pick winners and
+10:44
+losers and political competition between republics or between republics in the center
+10:50
+that is your business that's not the business of the united states of america
+10:57
+do not doubt our real commitment however to reform do not think we can presume to solve
+11:04
+your problems for you theodore roosevelt one of our great presidents
+11:10
+once wrote to be patronized
+11:15
+is as offensive [Music] as to be insulted
+11:22
+no one of us cares permanently to have someone else conscientiously striving to do him good
+11:31
+what we want to work with that's someone else
+11:36
+for the good of both of us that's what our former president said
+11:42
+we will work for the good of both of us which means that we will not meddle in
+11:47
+your internal affairs some people have urged the united states
+11:53
+to [Music] choose between supporting president gorbachev and supporting independence-minded
+12:00
+leaders throughout the ussr i consider this a false choice
+12:08
+in fairness president gorbachev has achieved astonishing things and his policies of
+12:14
+glasnost and perestroikan democratization point toward the goals of freedom democracy and economic
+12:22
+liberty we will maintain the strongest possible relationship with the soviet government
+12:29
+of president gorbachev but we also appreciate the new realities of life
+12:35
+in the ussr and therefore as a federation ourselves
+12:44
+we want good relations improved relations
+12:50
+with the republics so let me build upon my comments in moscow
+12:56
+by describing in more detail what americans mean
+13:02
+when we talk about freedom democracy and economic liberty
+13:10
+no terms have been abused more regularly nor more cynically
+13:16
+than these throughout this century despots
+13:22
+have masqueraded as democrats jailors have posed as liberators
+13:29
+and we can restore faith in government only by restoring meaning
+13:36
+to these concepts i don't want to sound like i'm lecturing
+13:42
+but let's begin with the broad term freedom
+13:48
+when americans talk of freedom we refer to people's ability to live
+13:53
+without fear of government intrusion
+13:59
+without fear of harassment by their fellow citizens without restricting others freedom
+14:10
+we do not consider freedom a privilege to be doled out only to those who hold
+14:17
+proper political views or belong to certain groups
+14:22
+we consider it an inalienable individual right
+14:29
+bestowed upon all men and women
+14:34
+lord acton once observed the most certain test
+14:40
+by which we judge whether a country is really free is the amount of security
+14:47
+enjoyed by minorities freedom requires tolerance
+14:56
+a concept embedded in openness in in glasgnose and in our first amendment protections
+15:03
+for the freedoms of speech association and religion all religions
+15:10
+tolerance nourishes hope a priest
+15:17
+a priest wrote of glasnost today more than ever the words of paul
+15:22
+the apostle spoken two thousand years ago ring out
+15:29
+they counted us among the dead but look we are alive
+15:36
+in ukraine in russia in armenia and the baltics the spirit of liberty
+15:44
+thrives
+15:51
+but freedom cannot survive if we let despots flourish
+15:58
+or permit seemingly minor restrictions to multiply
+16:04
+until they form chains until they form shackles
+16:13
+later today i'll visit the monument at baby yar a somber reminder
+16:20
+a solemn reminder of what happens when people fail to hold back the horrible tide of
+16:27
+intolerance and tyranny
+16:32
+and yet freedom is not the same as independence [Music]
+16:38
+americans will not support those who seek independence in order to replace a far-off tyranny with a local
+16:46
+despotism they will not aid those
+16:51
+who promote a suicidal nationalism based upon ethnic hatred
+17:00
+we will support those who want to build democracy
+17:06
+and by democracy [Music] we mean a system of government
+17:13
+in which people may vie openly for the hearts and yes the votes
+17:20
+of the public we mean a system of government that derives its just power
+17:27
+from the consent of the government that retains its legitimacy
+17:33
+by controlling its appetite for power
+17:39
+for years you had elections with with ballots but you did not enjoy democracy
+17:46
+and now democracy has begun to set firm roots in soviet soil
+17:53
+the key to its success lies in understanding government's
+17:58
+proper role and its limits democracy
+18:05
+is not a technical process driven by dry statistics
+18:14
+it is the very human enterprise of preserving freedom
+18:21
+so that we can do the important things the really important things
+18:26
+raise families explore our own creativity
+18:32
+build good and fruitful lives
+18:38
+in modern societies freedom and democracy rely on economic liberty
+18:47
+the free economy is nothing more than a system of communication
+18:54
+it simply cannot function without individual rights
+18:59
+or a profit motive which gives people an incentive to go to work an incentive to produce
+19:08
+and it certainly cannot function without the rule of law without fair and enforceable contracts
+19:17
+without laws that protect property rights and punish fraud
+19:25
+free economies depend upon the freedom of expression the ability of people to exchange ideas
+19:31
+and test out new theories [Music] the soviet union weakened itself
+19:39
+for years by restricting the flow of information
+19:44
+by outlawing devices crucial to modern communications such as computers and copying machines and when you restricted
+19:53
+free movement even tourist travel you prevented your own people from
+19:59
+making the most of their talent you cannot innovate
+20:04
+if you cannot communicate and finally
+20:11
+a free economy demands engagement in the economic mainstream
+20:18
+adam smith noted two centuries ago trade enriches all who engage in it
+20:26
+isolation and protectionism doom its practitioners
+20:31
+to degradation and want i note this today
+20:38
+because some soviet cities regions and even republics
+20:43
+have engaged in in ruinous trade wars the republics of this nation have
+20:49
+extensive bonds of trade which no one can repeal
+20:55
+with the stroke of a pen or the passage of a law the vast majority of trade
+21:02
+conducted by soviet companies imports and exports
+21:08
+involves as you know better than i trade between republics
+21:17
+the nine plus one agreement holds forth the hope that republics will combine greater autonomy
+21:23
+with greater voluntary interaction political
+21:28
+social cultural economic rather than pursuing
+21:35
+the hopeless course of isolation
+21:41
+and so american investors and businessmen look forward to doing business in the
+21:47
+soviet union including the ukraine we signed agreements this week
+21:54
+that will encourage further interaction between the us and all levels of the soviet union
+22:01
+but ultimately our trade relations will depend upon our ability to develop
+22:07
+a common language a common language of commerce
+22:12
+currencies that communicate with one another laws that protect innovators and entrepreneurs
+22:19
+bonds of understanding and trust it should be
+22:24
+obvious that the ties between our nations grow stronger every single day
+22:31
+i set forth a presidential initiative that is providing badly needed medical aid to the soviet union
+22:38
+and this aid expresses american solidarity with the soviet peoples during a time of
+22:43
+hardship and suffering and it has supplied facilities in kiev
+22:49
+that are treating victims of chernobyl you should know that america's heart
+22:56
+the heart of all hearts of all went out to the people here at the time of chernobyl
+23:05
+we have sent teams to help you improve upon the safety of ukrainian nuclear
+23:10
+plants and coal mines we've also increased the number of cultural exchanges with the republics
+23:17
+including more extensive legal academic and cultural exchanges between
+23:22
+america and ukraine and we understand that you cannot reform your system overnight
+23:31
+america's first system of government the uh of the continental congress
+23:37
+failed because the states were too suspicious
+23:43
+of one another [Music] and the central government too weak
+23:48
+to protect commerce and individual rights and in 200 years we've learned
+23:55
+we've learned that freedom democracy and economic liberty are more than terms
+24:02
+of inspiration they're more than words they are challenges
+24:09
+your great poet shevchenko noted in your own house
+24:15
+can you have your truth your strength and freedom
+24:22
+no society ever achieves perfect democracy liberty or enterprise
+24:28
+if it makes full use of its people's virtues and abilities it can use these goals as guides
+24:36
+to a better life and now
+24:41
+as soviet citizens try to forge a new social compact you have the obligation to restore power
+24:48
+to citizens demoralized by decades of totalitarian
+24:53
+rule you've got to give them hope and inspiration
+25:00
+determination by showing your faith in their abilities
+25:09
+societies that don't trust themselves or their people cannot provide freedom
+25:14
+and they can guarantee only the bleak tyranny of suspicion avarice and poverty
+25:22
+an old ukrainian proverb says when you enter a great enterprise
+25:29
+free your soul from weakness the peoples of the ussr
+25:36
+have entered a great enterprise full of courage and vigor and i've come
+25:42
+here today to say we support those who explore the frontiers of freedom
+25:48
+we will join these reformers on the path to what we call appropriately call a new
+25:54
+world order you're the leaders
+26:00
+you are the participants in the political process
+26:06
+and i go home to an active political process
+26:12
+so if you saw me waving like mad from my limousine
+26:18
+it was in the thought that maybe some of those people along the line were people from uh philadelphia or pittsburgh or detroit
+26:26
+where so many ukrainian americans live where so many ukrainian americans are
+26:32
+with me in the remarks i've made here today this has been a great
+26:40
+experience for barbara and me to be here we salute you we salute the changes that we see
+26:48
+i remember the french expression viva la difference and i see different churnings around this chamber and that's
+26:54
+exactly the way it ought to be one guy wants this another one that that's the way the process works when
+27:00
+you're open and free competing with ideas to see who's going to emerge correct and who can do the
+27:07
+most for the people in ukraine and so for us
+27:12
+this has been a wonderful trip albeit far too short and may i simply say
+27:18
+may god bless the people of ukraine thank you very very much
+28:07
+[Music]
+28:12
+i would like to express my gratitude for uh sharing
+28:18
+your ideas and thoughts with us we believe that
+28:24
+this is the experience of a great role that you've come
+28:29
+along the road of democracy and liberty for all of us present here
+28:39
+it was really very moving to hear that
+28:44
+in order to persuade everybody that we're striving
+28:50
+for uh democracy and for progress and you quoted shivchenko our great poet
+28:56
+and and i would like to say that this is not only a very spiritual moment to us
+29:03
+but also the sign that you feel deep respect to the history of our land
+29:09
+and would like to assure you that
+29:16
+this will give us another yet another impetus to pursue sovereignty
+29:24
+and your permission i would also like to make a little joke
+29:30
+in this room we've been working for more than a year
+29:38
+15 months but they've never been so many people in this room before
+29:45
+and it's never been that silent when somebody was making a speech
+29:56
+and i just thought that well it would be great existence for me if
+30:02
+you come here more often
+30:13
+foreign
