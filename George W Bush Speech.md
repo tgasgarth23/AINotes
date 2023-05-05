@@ -1,28 +1,50 @@
-Title: Summary of George H.W. Bush Speech in Ukraine
+Crash Course World History: World War II
 
-Introduction:
-During his visit to Ukraine, George H.W. Bush made a speech supporting Ukraine's struggle towards democracy and economic reform. The following is a summary of the key points of his speech. 
+Introduction 
+- John Green is going to talk about World War II 
+- Reasonably entertaining, unlike the war 
+- The goal: give perspective on how and why the war happened  
 
-Freedom and Democracy:
-Bush defines freedom as the ability to live without fear of government intrusion and harassment by fellow citizens. He stresses the importance of tolerance and notes that it nourishes hope. Bush considers democracy a system of government in which people can openly compete in the political sphere. He highlights that democracy requires governments to understand their proper roles and limits. 
+When did WWII start?
+- Hard to pinpoint one specific starting date 
+- Possible start dates: Japan invading Manchuria in 1931 or China in 1937, Hitler taking power in 1933, or America starting to fight in 1941 
 
-Economic Liberty:
-The former President states that free economies depend on individual rights and a profit motive that gives people an incentive to work and produce. He argues that communication and exchange of ideas are necessary components of a free economy. Additionally, he asserts that isolation and protectionism lead to degradation and want. 
+The European Theater of World War II 
+- Most well-known part of the war 
+- Hitler started the war with his re-militarization and eventually going to war 
+- New style of combat using mechanized technology called the Blitzkrieg, where the Nazis quickly rolled over central Europe 
+- Then, set their sights on Britain, where the Battle of Britain occurred 
+- Europeans also fought in North Africa and Americans fought Nazis for the first time there 
+- The war in Europe changed when the Nazis invaded Russia, leading to many deaths 
+- Eventually, the Allies declared victory in Europe  
 
-US-Soviet Union Relations:
-Bush emphasizes that the US will support those who seek democracy and economic liberty in the Soviet Union. He states that US-Soviet relations will depend on the ability to speak a common language of commerce, protect innovators and entrepreneurs, and develop mutual trust. Bush says that US trade relations will include encouraging expanded cultural exchange between America and Ukraine. 
+1941
+- A big year for WWII 
+- The Nazis invaded Russia, creating allies between capitalist and communist countries
+- The Japanese bombed Pearl Harbor, hoping to keep the United States neutral, which failed 
+- Japan also invaded Southeast Asia, making Australia and New Zealand nervous 
 
-Conclusion:
-Bush concludes his speech by expressing his admiration for the Ukrainian people's courage and vigor as they explore frontiers of freedom. He also highlights the importance of trust between governments and people for the provision of freedom.# Summary of the Text
-Title: Reflections on the Importance of Differences in Ukraine
+End of World War II
+- Allies advanced from the west and Russian Red Army from the east 
+- Last-ditch German offensive at the battle of the Bulge failed 
+- Mussolini was executed and Hitler committed suicide 
+- World War II ended after Germany surrendered unconditionally 
+- Three months later, the United States dropped nuclear bombs and Japan surrendered  
 
-The text is a conversation between two speakers, one of whom is visiting Ukraine. The speakers emphasize the importance of differences of opinion and the democratic process. The visiting speaker expresses gratitude for the opportunity to hear different perspectives. The host speaker notes how rare it is for so many people to be in the room and how valuable it is to have respectful discourse. 
+The Hunger Plan 
+- WWII had a definite cause – unbridled military expansion by Germany, Japan, and Italy 
+- Hitler wanted to expand Germany’s territory by taking Poland, the Ukraine, and Eastern Russia, calling it the Hunger Plan, where they wanted to feed Germany’s citizens by resettling Germans in this new land 
+- This plan called for 20 million people to starve to death 
+- 6 million Jews were killed by the Nazis 
+- Japan also sought to expand its agricultural holdings to feed its population growth 
 
-## Importance of Differences
-At 26:54, the visiting speaker reflects on the value of diversity, stating "viva la difference." They note that differences of opinion are important in the democratic process. 
+Importance of World War II
+- Proved that man is a wolf to man 
+- Many people died, including noncombatants 
+- World War II changed how we view warfare and the world as a whole# Modern War and Its Effects on Civilians
 
-## Gratitude for Different Perspectives
-The visiting speaker expresses gratitude for hearing different ideas and thoughts at 28:12. They describe the experience as a "wonderful trip." 
+During modern wars, civilians are not excluded from attack. This is because the civilians help sustain the war through industrial and agricultural production. In a total war, the line between soldier and civilian blurs resulting in a non-existent non-military target. The bombings of major cities like Dresden, Tokyo, and Hiroshima targeted both civilians and soldiers. The Holocaust also horrified the world as modern industrial powers used technology and record-keeping to exterminate millions of people. The atrocities committed during World War II forced us to question Western dominance of the planet and whether it could be considered progress.
 
-## Valuing Respectful Discourse
-The host speaker notes that it is rare for so many people to be in the room, and that the silence during speeches is a sign of respect. They joke that they would be happy to have the visiting speaker come back more often.
+# Credits
+
+The video series is produced and directed by Stan Muller and written by Raoul Meyer and Stan Muller. Meredith Danko is the script supervisor, and Danica Johnson is the associate producer. The Thought Bubble team creates the graphics.
