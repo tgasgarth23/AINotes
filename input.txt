@@ -1,1 +1,2678 @@
-All right, folks, let's get started. How's everyone doing? Everyone enjoy the break, get a chance to decompress a little, I hope. All right, cool. Awesome. Yeah. So plan for today is to kind of introduce a new topic of concurrent objects. And this will take us really through most of the rest of the semester because it's talking about how we can get concurrency and parallelism with more sophisticated data structures. So, so far, we've looked at really simple data structures. We've looked, well, not even data structures, but just accessing memory in a way that's safe to use with multiple threads. So we had this example of a counter that we used over and over again. And we just had a single int that different threads needed to be able to access. So now we want to be able to talk about not just like a single memory location that we need to protect, but bigger data structures like we want to implement a linked list, we want to implement a queue. We want to implement a balanced binary tree, something like that. So how can we do that in a way that supports multithreading and is still guaranteed to be correct. There's a lot that goes into this, like even just defining what it means to be correct, is now a more challenging problem. And there's no single definition for what it means for a cue to be acute or acute implementation to be a. Q. And so that'll kind of yeah, it'll take us a little bit of time to kind of plot out the terrain and see what can happen here. Yeah. The sign different brands and different yeah. So we wanted to do something like we want to have a shared queue that acts like a queue. Multiple threads can access concurrently, but it's not. Yeah, we need to define what it means to be a q in this contexts now. But before we jump into that, a couple of announcements. First of all, lab three is due on Friday. This is the Mandel, Mandelbrot computations using vector operations. So this was what we spent most of last week talking about. One thing that I would strongly recommend that you do today if you haven't already is make sure that on your personal computer you have a version of Java that supports these vector operations. So the way to do that is just to try to compile something that uses this incubator, JDK incubator vector. And so I think if you have anything that's newer than Java 16, I think it's 16 plus. It'll let you do this. If you have an older version of Java, won't, you'll have to upgrade. So make sure that works if you run into trouble, let me know and I'll point you towards resources to update. You can also do all of this on the cluster. So even if you don't have it running on your computer, you can log into the cluster. The one thing that you do need to do before you can do this Java add modules business, you have to load the right version of Java into the cluster, because the cluster has a few different versions of Java installed. So in order to use Java 19, if you just type this command module load and then this stuff, the entire session, we'll use Java 19 whenever you use Java C or Java on the cluster. So yeah, so you can run everything on the cluster, test it that way. But yeah, if you want it on your own machine, you have to make sure that you have to recent version of Java. So any questions about the assignment or any of that before moving on? Alright, cool. So then, yeah, I also just wanted to give a heads up of what to expect for the coming week. So we're kind of, I guess at the midpoint of the semester. So kind of the main work that'll be coming, coming up. So I'll assign URL, I'll give a description of the final projects. So basically what the final project is is, well, there's three options, and you get to pick two of them that you wanna do. Um, so there's, there's kind of, yeah. So the first option is sorting. So you can write a program that sorts as quickly as possible. So this is very fundamental task, something that you can do a lot with parallelism in order to sort a list of numbers very quickly. Another option is computing prime numbers. So I'll give you a baseline implementation of a procedure that will compute a list of prime numbers. And the task that you will have for this assignment is, I will give you 1 s of compute time. You need to compute as many primes in the sequence as possible. So you have to write the list 235711 and so on. It needs to be sequential in that order. I will give you one seconds of compute time on the HPC cluster. And the measure of performance is how many sequential primacy, right? So I'll just write an array. The first number that I see that is not the next prime number. I stop that. As far as your program gets in a second, is the measure of performance of your if your implementation. So again, this is something that will require a bit more thought in terms of how to implement it. And then the third option is choose your own adventure. Which is you come up with a problem that you want to tackle, that you can employ parallelism and you'll test and do all that. So each of these things, yeah. I mean, what I what I expect of them is that you're not just sit down and apply a couple of things, but you do fairly exhaustive testing and you record the changes that you made and what sort of improvements or non improvements that you see in terms of your programs performance. And so you'll want to, the assignment or the final project. You'll, you'll do two different submissions. So you'll pick two of these, three. For the sorting and the prime numbers. There'll be a semi competitive aspect to it where I'll maintain an anonymized leaderboard of the fastest benchmarks on these. And the groups that have the fastest performance will get some extra credit or something. So yeah, so keep a heads-up for I'll post in a more official announcement about what to expect from those. So I think we'll only have one more written assignment, so that'll be due in two weeks or so. And then also one thing that was on the syllabus that we haven't done yet because I wanted to wait until we had just had more time to let the, the material in the class kind of absorb a little more, is they will have some quizzes. So we won't have a final exam in the class. But instead, you'll have every week like a ten or 15 minute quiz that will cover a topic from the more conceptual side. So not the programming side, but again, I'll, I'll give more concretely announcements about that. So you'll have plenty of plenty of time to prepare and you'll know more or less exactly what material will be covered on each quiz. Okay? So that's administrative stuff. Any questions? Alright, cool. Current objects. So what have we seen so far? So far, we've, we've looked at locks. So these are ways that we can maintain that only a single thread at a time has access to some resource. So we have our critical section of code, the thing that we want to protect. And here's like a kind of pseudo implementation of a shared counter. So we have this counter objects that if I call increments 17 times, even if different threads call it, I want to maintain that what the correct behavior should be is that at the end of the execution count stores the value 17 because it was incremented 17 times. So here's what we could do in order to get that behavior. So we have our count variable that stores just the value that we want to to the store. And then we have a lock inside of our shared counter as well. So what this lock does again is that if multiple threads concurrently call lock, only one can return before the, before another one or before anyone unlocks. So the way that we increment the counter with a lock is we first we try to obtain the lock and we're stuck here until we do obtain the lock. Once we return from this loc method, we have the lock, we have exclusive access to. The critical section. So we do our computation in the critical section which is incrementing the value. And then when I'm done incrementing the value, I release the lock, so I call the unlock method. This will guarantee that the, the counter does what we expect to counter to do. Because it essentially forces the execution to be sequential. Whoever gets the lock first does their increment, and the next person can't increment until they're finished. The first person's done with their increment. So that's the idea and what we've done so far. So what are the, I don't know if we can kind of do this with any object that we might want to have concurrent access to. So like what are the advantages or disadvantages of this approach? In particular, in terms of reasoning about the correctness of the procedure and also thinking about the performance of the procedure. What does locking bias, what does it cost us? So what did we, what was the problem? I guess let's maybe focus on correctness first. What was the issue with correctness when we didn't have locks with our counter object. Yeah. Nice. Yeah, So on the correctness size we decide we get this mutual exclusion property that says that only one thread is ever in the critical section at a time. We can just place an order on the accesses to the critical section and say there is a first access by the first threat that obtains the lock. There is a second access where the second threat obtains the law. And because of the locking and unlocking, we get we get that these accesses are separated from each other and so they can be ordered. And so are our execution is essentially sequential. On the other hand. So that makes it easy to reason about the correctness. Because if our sequential implementation is correct, then when we add the lock, the concurrent implementation is also correct because it does the same thing as the sequential execution. But that harms us in terms of performance. Because now we can no longer do multiple things in parallelism, in parallel. So we lose parallelism. So all of this stuff that we've been looking at in class so far in terms of improving performance, we lose all of that in the name of getting something that works. And so usually with a program, it's not the case that all of it needs to be like every part, every computation needs to be performed sequentially. And so we still can get good performance boosts if we're only accessing this shared object infrequently. But we don't get this kind of this free speedup that we might by just throwing more threads at a problem. Like the early examples such as like computing pi or something like that. So we get easy to reason about correctness. If we have a sequential, the correct implementation with locks, we get the same guarantee, but we lose out on parallelism. Yeah, sorry. Whoops, I meant to erase. Same. Alright, so these are the advantages and disadvantages of using the law. So again, the idea is if you are only incrementing the counter, say very infrequently. The sequential slowdown doesn't necessarily harm us. But in some cases we might want to do something more sophisticated. So today what we'll do is we'll talk about things that are more complicated than just a single integer value that we want to protect. The main questions. So concurrent ADT, ADT is abstract datatype. So something like a cue. List, a stack, whatever you have, something that specifies what responses you get from a sequence of operations. Okay, so the main questions we want to address are, how can we guarantee that our program is correct if we allow concurrent access? So again, this might be easy with locks. But again, the tradeoff is that if we just kinda throw a lock at a data structure, maybe we no longer get any performance increased from it, or maybe we really slowed down the, the the performance. And again, there's this question of like, what do I even mean by correctness now? Like, what does it mean to be a q when you can have concurrent enqueue operations and concurrent dequeue operations. Then the second question is, how can we achieve best multi-threaded performance? So this is where the locks potentially harm us because they can just essentially forced to sequential execution on us. When what we want is to get some performance boost from parallelism. That's where we wanna go. So let's think of a first example of a data structure that most people encounter. Maybe the after an array or a linked list is the next data structure that you implement. I mean, who implements an array? This is maybe the first data structure that you implement by hand. What is a doubly-linked lists look like? So we have a bunch of nodes. This is a node and it stores references to the case of a doubly-linked list of previous node, previous node. And it's next node. Each node has a previous neighbour and the next neighbor. Now we want to think about, I have a linked list that multiple threads are accessing at the same time. So let's say I just wanted to do an insertion single thread. This is what we, we've all done before. So here's my link list. So I want to insert this new node between these other nodes. So here's the new node to insert. And then here's the location that I want to do the insertion. So I want to do it after this node. How do I do that? Well, I just update the previous and next fields of everyone involved. So who did I need to modify in order to do this insertion? All three of these nodes kind of got modified, modify the previous, next of these three. So that's how it looks in pictures. So what does kind of like a, a computer science one-twelfth style implementation of this look like. We have a node class stores next to previous and some value associated with the node. Presumably we're storing something in our linked list. Then how do we do our insert? So I want to insert, so what's this method doing? So I want to insert after the node in D. So insert node with value after Andy. So what do I do? I look for the next node after n d. I create a new node to store my new value. I set these next two point to the new, the new node. I set the new node's previous 2.2 and D. I've set the next, the current nodes are the new node's next to point to these next. If Andy's next is not null, I said its previous pointer to point to me. So we're just doing this insertion in code. So everyone happy with this? I guess this is like hopefully familiar. But that's one thread. So what could happen if I have two threads? So maybe I have say, T1 calls insert and d, ten and thread two calls insert, same ND and the value nine. So this happened concurrently. So what might happen to my, my linked list? So here's Andy. So maybe I have my next here. So before I had this picture, what's going to happen when these two threads come along and try to concurrently call insert or what could happen. Yeah. Yeah, so right. Like this is the first place where bad stuff can happen, right? So let's say both of the threads make it that far. So thread one made, made it occur for thread one. And maybe thread two comes along and makes its Kerr for thread two. So now I have these two new nodes that are created after the first two lines get executed. Then the next line determines what could happen, right? So ND dot next either goes to, is gonna get set to one of these two. Then the next one's going to override it. So now we could have either of these happening. So we could either have ND DOT next points to here, or we could have ND DOT next points to here. And this is happening at lime. Lime, I don't know. We'll call this star. That's making them point to, right? If you're doing an insertion, you need to modify two nodes, the node before you, in the node after you. So the first line is just getting the node that will be after you. Like the insert method is like insert after node and D. But in order to do that, I need to know what, what previously came after MD. Okay. So lines star, I have an issue already, right? Where the next of n d is either going to point to T1s current or T2s current. So in the best-case, one of only one of these is going to get inserted at this point. Because what does it mean to be inserted into the list? It means that starting from the head of the list, I follow the next pointers and I eventually reach your, your notes that you just inserted. Then we can have some other really bad stuff happens. So Current, previous and current next. So these lines are fine because they're only updating current. And no matter what everything is, we're only updating the threads own, own node that it created. But then we also have our second kind of danger zone here. Maybe this is double star. Is that I could have next previous pointing either to T1 or T2 after the execution. These happen with double star. So depending on how this all pans out, right? It could be the case that like, so, it could be the case that node or NDAs next points to T1s current. And it could be that next. So this red nose, previous points to T2s current. So we get this weird break in our, in our linked list. So it could be that if I traverse the list from left to right, I see the current that was added by T1. But if I traverse the list from right to left, I'll see you the current that was added by T2. It will never be the case that I see both of these elements added in. What I would want probably is that if two threads try to add something to the linked list, they both get added. But with this implementation, without any safeguards, It's possible that that one doesn't get added or they get added in some weird way. And maybe it's possible that what I intend to actually does happen, maybe T1 does all of its steps and inserts itself. And then T2 just gets inserted before T1s current. So this is a mess though, right? Like so this, this doesn't, doesn't guarantee that either node is inserted properly. This is bad news. Okay? So how could we fix the problem? Would be one way that we could make it make everything work the way that this would have worked. And we just done like a computer science one-twelfth style implementation. Yeah, So luck. So what should I lock? Where? So yeah, I could try to lock. So the two bad statements were when I was modifying ND and when I was modifying Andy's next. So I could surround each of these Beilock. I mean, is that going to fix all of our problems? It's not totally obvious to me that this would fix the problem. So it would fix the problem where, right, Like where node's next or previous wins out. But the issue still remains from this example before, where maybe thread one obtains next or previous lock first. So then the next node comes in and overwrites that. And then maybe the other thread winds for the second lock. So that thread, when it calls this line, it sets next previous. This gets overwritten. If we just surround these two statements by locks, we could still have this weird behavior where we end up with ND. So Kerr, I'll come car1 and Kurt two. Next. We could still end up with a case where say ND is next points to occur, occurs next points to next. But next previous points to occur. And CORS cartoons previous points to ND. So if we just lock these two lines of code, we can still run into the same issue that we had before. Yeah, nice. So how about if we lock the whole thing? Lock the whole list. Yeah, it makes the multithreading pointless, but it fix it. But at least we still have a linked list now, right? Because performance is, is useless if it doesn't perform the task that you want it to. Our highest priority is always correctness. We always want a linked list. If we're implementing a linked list, we want every operation to do what we expect that operation to do. Performance is always secondary to correctness. So we can prioritize correctness and make something that's reasonably easy to reason about. We could just lock the whole list. I just add to my linked list a lock. And now in order to do anything all of these operations, I have to obtain the lock first. So this whole thing is my critical section. So what happens now if two threads concurrently call, call, insert. So I have Kerr, I have next. I have, oops, sorry. That shouldn't be cardiac should be previous. Then I have current one in blue to red. So what happens if say kirwan obtains the lock first? Yeah. That's nice. Yeah. Right. I should use consistent naming. So previous, this is Md. Yeah, so now car1 does its insertion. It succeeds because again, it's the only one that has access to the critical section. Then cartoon comes along. It's still pointing to ND, but MDs next is now pointing to one. So these will get overwritten. Andy's next will point to Kurt two, and so on. Now at the end, my linked list goes ND, cartoon one next. So we're just resolving this concurrent call to insert by essentially making it two separate sequential calls. Whoever calls first and whoever called second based on whoever obtains the lock first and whoever obtains the lock second. If my implementation, my sequential implementation was correct. Now my concurrent implementation is also correct because the locking essentially forces the concurrent execution to act like a sequential execution. You all think, are we happy with this? Is this the best we could do? This is what my locked execution looks like if I want to insert, say, in two different locations. So red tries to do the first insertion, blue tries to do the second insertion. So someone acquires the lock first, say it's the red. They perform their insertion. They released the lock. That leaves blue free to obtain the lock. And they do their insertion. They released the lock and everything's good. So again, we're just turning this concurrent execution into a sequential one. Nice. But could we have done this faster with this picture? What would be a natural concurrent thing to try to do if I had these two insertions together? Yeah. Surgeries at different places. Yeah. Right. So if the yeah. So the the idea is that if my my insertions don't don't interact with each other on separate, they only modify separate nodes. Maybe we should be able to do them in parallel. So can insert nodes in parallel if no overlapping modifications of nodes. So as I have it pictured here, like the red insertion only is going to modify these two nodes. And the blue insertions only going to modify these two nodes. So maybe I should do, be able to do something more clever than just locking the whole data structure, enforcing blue to wait until read finishes. So what would that look like? Yeah, when could we insert these concurrently? Like, what's the condition that I need to check to see if two insertions could be done concurrently or in parallel, I guess I should say. So. Could I do concurrent insertions here and here? Well, so who does the left insertion modify? That one? Wants to modify both of these. And then which does the right one want to modify the one after, it's fine. But here we have a problem. I can't do those two insertions concurrently. But I could e.g. insert here and here concurrently, right. So these are okay. What's the condition in this case? Yeah. Yeah. So they don't want to modify any of the same nodes. So yeah, like on the left here, I have my two nodes that I want to modify. And on the right here I have two nodes that I want to modify. They don't overlap. So I'm fine modifying both of them at the same time. The one-hour mark. So you could do sorry. Which so let me 123456. So which ones? It could have been that the time to insert into that secondary. Into this position, 4-5? Yeah. Five, 3-2. Yep. So then these two we could also do together because they both want to modify different, only different notes already in the list. Okay, So if we lock the whole data structure, like this is bad news. But now we could try to do a more fine-grained locking, right? So instead of locking the entire data structure, what if we just tried to lock individual nodes? Not the whole list? So maybe we just lock individual nodes. So if I'm going to modify two nodes, I need to obtain both of their locks before I can proceed with the modification. So how does this look? So which nodes need to be locked? The one before and the one after. So the red node would need to lock this. And this blue node or the blue thread needs to lock this and this red and blue. Well, so we'll have to change our node class so that it supports this. And so we'll just have to wait. When I tried to do an insertion, I have to obtain two locks now instead of one. And then I wait until I've obtained both of those locks. And then I can do the insert method once I have both locks. Yeah, What does this look like in code? Now my node before I had Previous Next and value. So what do I add to it? I had a lock, and now I have a method that allows me to lock and unlock the node. So if I try to lock a node, I need to obtain its lock. To unlock it, I just released its lock. This is all I changed to my node class. How do I do my insertion? So I want to insert after node and D. So I obtain the lock for ND. Then after I've obtained that lock, I go to its next node. And if it's next node is not null. So if I'm not inserting at the very end of the list that I need to lock the next node as well. Then once I've obtained both locks, I can do my actual modifications and insert everything. Then finally, when I'm done doing that, I released both locks. So how does this look in pictures? So in this picture, red can acquire both of the red nodes locks. Blue can require both of the blue nodes locks. They both do their insertion in parallel potentially in both release. And so now I've done two insertions in the time that it would ordinarily take me to do one insertion. Whether or not I can do this depends on where I'm doing the insertion. But if my list is big and maybe my insertions are all over the place, maybe most of the time there isn't any contention and all of this works fine. And so I actually do get a performance speedup from this. What happens if there is contention? So now they both want to obtain the lock for this node, right? So what happens in this case, or what could happen? So exactly one of them is gonna get access at that at a time. And I don't know which one. It could be the red one. It could be the blue one. But maybe the red one acquires that lock first. Now the blue node needs to wait. And it's going to wait until the red node finishes or the red thread finishes. So maybe the red finishes. Then finally, it releases its lock. Now blue can obtain the locks and do its insertion. So in this case, we do, we do end up with the sequential execution. But It's still, is inserting both of the nodes the way we would have expected in a sequential execution. We don't, we no longer determined the order in which these items are added in like real wall clock time. But the insertion looks as though I had done one and then done the next. And that's exactly what we want our LinkedList to do. Yeah. So do something like this. Say, well, the blue, the red nodes actually only going to change the previous of this node and the blue nodes only going to change the next. So maybe we can actually do these in parallel. So how would I, what would my implementation has to look like in order to support that kind of parallelism. We can absolutely do that. So, right, like in this case I was unlocking, let's go back. Locking the entire node. I have one lock for the, the whole node. And if anyone obtains the lock, no one can modify anything for that node. So it could just as easily have a lock for the previous value and lock for the next value. So I actually have two locks and my nodes. Now, if in this case that you have here, read only wants to modify previous and blue only wants to modify next. So we could have it that the red thread gets the previous lock and this node and the blue thread gets the next not lock on this node. And then we can do that in parallel. So this is absolutely something we could do. Whether or not it's worth it. We'd have to look at the application because, right, the cost is now I have two locks, so my node class is much heavier. There's a lot more data associated with it then before. But if there's a lot of these operations going on, maybe it's worthwhile for me to do that. So yeah, you're absolutely right. Like we can decide what level of granularity we want to look at this. I think this operation is fine, but then we'll have to think about like, what happens if another third thread comes along and tries to do an insertion here and tries to get the next. You have to make sure that everything is done in the right order. Absolutely. This is a great idea. Okay, cool. So this seems pretty good. Is everyone happy with it? All right. What if we have a circular linked list? These show up in a lot of applications where you don't have a head and a tail of your list, but you actually just go around in a circle. Maybe I want to do the same thing there. So think about what could happen. So what happens? We have multiple concurrent insertions. They all guaranteed to succeed. Let's say I have a thread that comes along and wants to insert. So here's T1. Wants to insert 1-2. Another thread, T2 comes along, inserts 2-3, something like that. What? Maybe we can keep going right? More threads. So you have potentially we could lock every node. So maybe T1 gets the lock for node one, and t2 gets the lock for node two. So T1 is stuck. It can't do anything because it doesn't have to lock for T2. T2 just got the lock for, for node two. But what else could happen if I have more threads here? Yeah, nice. So maybe T3 gets this lock. Now I'm running out of colors. So let's cycle back around. T4, gets this lock. T5 gets this lock, right? So if I'm trying to do five concurrent insertions, now, everyone stores are holds the lock for, for one node. And P1 is waiting on T2. T2 is waiting on T3, T3 is waiting on T4, T4 is waiting on T5, and T5 is waiting on T1. So what happens now? We're stuck. So even though my locs are fine, they guarantee that someone makes progress. Whoever asks for the lock, someone obtains it. Even though all of my locs have say starvation freedom are deadlock freedom. Because I have more than one lock on my data structure. These locks can interact with one another in interesting ways. If I have five threads trying to all obtain five locks on this data structure, they can block each other. This is called a blocking execution. So even though no one is blocked from obtaining a single a single lock, like all of the locks individually are well-behaved because we have these dependencies between the locks on how we access the larger data structure. I'm no longer guaranteed that anyone can do an insertion. So this is the downside of locking is that if I do locking of the entire data structure, it slows me down because only one person can modify the data structure at a time. If I do locking of individual components of the data structure, I may be able to do things in parallel. I may get a speedup. But if I'm not really careful, we can run into or allow cases like this, where individual threads are doing the right thing. Individual locks are doing the right thing. But collectively we get stuck. Everyone's waiting on someone else. And the more locks we have, the worst this problem gets, the harder it becomes to to mediate between these. Yeah. Maybe, but then we need to change what our locks are doing. Right. Like we need a fundamentally different type of lock than the locks we've looked at so far. So this is a fundamental tension, is that locking the whole object like a linked list is easy to reason about why it works. Because it essentially forces us into a sequential execution. But because it gives us a sequential execution, we no longer can get any value from parallelism. On the other hand, locking individual parts might allow us to perform more operations in parallel and therefore give better performance. But we have to be really careful that we don't allow for things to get stuck. This is the main tension that we have and something that we'll explore quite a bit in the coming weeks. Alright, so that's everything I wanted to say for today. So we'll follow it up on Wednesday. We'll talk about what it even means to guarantee correctness in terms of people don't, or threads don't get stuck. And also just like what it even means to be a stack or a queue or something that allows for multiple concurrent accesses, right? Thanks everyone for coming out and I will see you on Wednesday.
+Introduction
+0:00
+In this video, I will tell you the story of human philosophy encompassing an incredible 2500 years of philosophical history. By the end of this video, you will know all the basic
+0:10
+philosophical ideas, schools and approaches, as well as some of the most influential philosophers from around the world. The video has 4 major parts and each with 2 or 3 sections, just
+0:20
+like chapters in books. In part 1, I will answer the most fundamental question. Why are humans the only species
+0:27
+that have invented philosophy? Or where does philosophy really come from? Also how has
+0:32
+philosophy evolved in the past 2500 years? And why philosophy has so many branches such
+0:38
+as ontology, epistemology, rationalism, empiricism, humanism, utilitarianism, existentialism,
+0:45
+postmodernism and more? In part 2, I will look at the origin and differences between eastern philosophy and western philosophy.
+0:51
+Why one emphasises spirituality, and changing yourself, while the other emphasises rationality,
+0:58
+and changing the world . I will look at the Greek giants of Socrates, Plato and Aristotle,
+1:04
+as well as the three giants of eastern philosophy, the Buddha, Lao Tzu and Confucius. In part 3, I will look at the philosophy of life and human civilisation. Is the purpose
+1:13
+of human civilisation to promote equality or competition? Is the purpose of human life
+1:18
+to seek knowledge or happiness? I will discuss philosophers such as Sun Tsu, Machiavelli,
+1:25
+Thomas Hobbes, Jean-Jacque Rousseau, Voltaire, Erasmus, Michel de Montaigne, Francis Bacon,
+1:30
+Martin Heidegger, Michel Foucault, and Bertrand Russell. In part 4, I will tackle the question of knowledge and human motivation. How do we know reality?
+1:39
+I will discuss the school of European rationalism versus British empiricism and Kant’s reconciliation
+1:46
+of the two. After Kant two distinct schools of philosophy emerged to explain human motivation.
+1:52
+One sociological and one psychological. Hegel’s sociological philosophy argued we are motivated
+1:58
+by historical forces, while Schopenhauer’s psychological philosophy argued we are motivated
+2:04
+by a blind subconscious will. So get yourself a strong cup of coffee and some popcorn and let Fiction Beast take you
+2:11
+on a journey of how homo sapiens’ huge brain terrified their tiny heart. As a result, they
+2:18
+invented all sorts of beasts from gods to demons to fairies in an attempt to comfort themselves and explain the world. But also invented philosophy to answer 3 deep existential
+2:30
+questions. Why am I here? Where have I come from? And Where am I going? To answer your
+2:36
+first question, you’re here because you’re curious about philosophy. So let’s begin.
+Origin of philosophy
+2:42
+Why philosophy? What’s philosophy? How did we come about
+2:47
+it? Why do we need it? And what’s happened to philosophy today? And what’s the future of philosophy? Today I will answer all these questions as I discuss the rise and fall of
+2:56
+human philosophy.  We humans utilize three massive weapons to navigate the world around us. And they’re
+3:03
+all built-in inside us. As a result, we humans are the most sophisticated animal that has
+3:09
+ever lived on earth, which is incredible. Next time someone complains about the world
+3:15
+being unfair, remind them of these amazing tools that every human has, while other animals
+3:20
+don’t have all of them. What are they?  Like all animals, the first and the most important tool is instinct, which most of the time subconsciously
+3:32
+shapes our behaviours. We have three basic instincts: food, sex and company. Our first
+3:39
+and most important instinct is survival. We spent a minimum of 8 hours or 1/3 of our day
+3:45
+working to earn bread. Imagine, if we didn’t have this instinct, how would you motivate yourself to work? Or worse still how would you motivate others to work? Our survival
+3:55
+instinct goes beyond food, we instinctively avoid danger or anything that threatens our
+4:02
+life. Do you know what happened to creatures who didn’t have survival instinct? They needed a self-help book to motivate themselves. 
+4:09
+After working 8 hours, in the evenings, we spend hours prowling our city centre bars
+4:15
+and restaurants in search of a mate or courting a mate. This is the instinct to procreate.
+4:21
+Of course nowadays we chase a mate for recreational purposes. The sexual urge is so strongly wired
+4:28
+in us, especially men, that we do it despite the fact that most of us have no plan to have
+4:34
+children. The giant panda is going instinct because they have become too lethargic to have sex, so the Chinese government spends lots of money to make more pandas. Imagine
+4:43
+our ancestors didn’t want to procreate. We wouldn’t be here. Our third basic instinct
+4:49
+is seeking the company of other humans. While men have stronger sexual urge, women have
+4:55
+a stronger urge for company. Without this instinct, we would all end up alone and perhaps
+5:01
+would never have a civilisation. Basically our instincts tell us what to do most of the
+5:06
+time, so we don’t have to really think about it or twist our brain to motivate ourselves to do those things. We instinctively seek food, a partner, and the company of others,
+5:16
+which allow our conscious brain to save energy on something else. 
+5:21
+The second weapon in how we navigate life is our emotions, which fluctuates day-to-day
+5:29
+and allows us to understand ourselves and those around us. Our emotions give us hints
+5:35
+about our environment. Depending on the time and place we feel angry, sad, frightened, content, happy and ecstatic. If instincts are like a climate that remains stable long-term,
+5:48
+our emotions are like whether that regulates our daily life. Our instinctive urges push
+5:54
+us to do things to achieve what we want, but our environment says yes or no. For example
+6:01
+in seeking a partner, we want someone but that person wants someone else. Or worse still
+6:09
+our survival is threatened, our emotions allows us to cope. So emotions allow us to grow,
+6:15
+change and adapt to a new place or person somewhat quickly. Our emotions are incredibly powerful in motivating us to do things right away. Negative or positive emotions help us
+6:26
+grow and move on and seek a better environment. In fact, one of the reasons humans conquered
+6:32
+the world is because we are not happy where we are for a long time. Apart from seeking food and safety, we are also motivated by boredom. So our emotions give our conscious
+6:41
+mind more free time to do other things. Instead our emotions do the job for us in motivating
+6:47
+us to move, grow and change.  Our third, and perhaps the most sophisticated weapon we have is reason, which is the basis
+6:56
+of science and technology which allow civilisations to flourish. This makes us different from
+7:01
+other animals, our ability to make rational decisions based on informed knowledge and
+7:06
+calculated risk. Instinct and emotions are hardwired in us from birth but rationality
+7:12
+is mostly learned through direct experiences of our own, as well as knowledge passed on
+7:17
+from our parents and ancestors either orally or in writing. In fact, our rationality is
+7:23
+so powerful that it can regulate our instincts and emotions. For example, our ability to
+7:28
+delay gratification allows us to forgo our present pleasure for future and long-term
+7:34
+pleasure. Of course, not all humans are born equal when it comes to delayed gratification.
+7:40
+Some want their cake right away. Some can wait a bit longer. But rationality is an incredible
+7:45
+tool for us to look long-term, not just here and now. Today we live in a modern world, or in the age of rationality. All our modern technological conveniences are the result
+7:55
+of rational science.  To sum up, humans are hardwired with three incredible tools: instincts, emotions and
+8:03
+reason. But where does philosophy fit in this? 
+8:08
+The word philosophy in Greek means the love of wisdom. So the first true human science
+What’s philosophy?
+8:14
+was philosophy. In fact philosophers were the first rational thinkers who replaced the wise old men or women. They were career thinkers, meaning they were known for their thoughts
+8:23
+and wisdoms. So philosophy at its core is a structured rational thinking. In other words,
+8:29
+its foundation is rationality.  Why? We humans developed a more sophisticated brain, perhaps the discovery of fire allowed
+8:37
+us to cook our food, so we could digest our food much quicker as a result we had more
+8:43
+time to think. When you’re busy, you have no time to think. In fact, I do my thinking while in the toilet, because I don’t take my smartphone with me. But this brain, good
+8:52
+in many ways, also came with a disadvantage. It allowed us to develop acute consciousness
+8:57
+and self-awareness. The more we understood our environment and our own existence, the
+9:03
+more we started to brood and ask some difficult questions. One reason, today we control our
+9:09
+brain by keeping ourselves busy or hooked on something, like work or entertainment or
+9:15
+our smart phone. With this thinking brain, came the most devastating awareness of all.
+9:20
+Death. Other animals might know death when it comes to them, so they instinctively avoid dangers. But we human beasts know death from an early age. As rational animals, we learn
+9:31
+from the past to anticipate the future. In other words, we anticipate death. Despite
+9:36
+trying not to think about it, we have this fear in the back of our mind.  So this brain of ours became powerful enough to ask important questions. Why are we here?
+9:47
+What is reality and how we know it. Early humans couldn’t explain the world, life,
+9:53
+the things around them, especially the sun, the light, seasons, thunder, fire etc. But
+9:58
+the most important question was why death. This is the main theme of the oldest surviving human story, The Epic of Gilgamesh, written 3-4,000 years ago, in which the hero is seeking
+10:10
+immortality but unfortunately he fails. So to console himself, he builds a city so people
+10:17
+could remember him. Other humans invented gods and religions as security blankets. In
+10:22
+fact the fear of death is so strong in humans that nearly every religion has extended life
+10:28
+to after-life so death couldn’t scare us anymore. You could say that human life is
+10:33
+so short that we have to have an after-life. However, today most people don’t believe in after-life. 
+10:39
+Politically or practically, early human societies were ruled by the strongest among them or a group of strong men. Then through the passage of time, generations later, myths, legends
+10:49
+and stories about these strong people were created. As time passed, these legends and
+10:54
+myths gave these early strong people titanic god-like roles. As Italo Calvino once said,
+11:00
+folk tales are told and retold so many times that they become like pebbles, smooth, shiny
+11:06
+and perfect. Of course the earliest gods were usually non-human phenomena such as the sun,
+11:11
+thunder, light, dark, earth and so forth but over time they took a semi-human form. Later
+11:17
+these ideas became more sophisticated in the form of religion that told sophisticated stories
+11:22
+about the origin of life and also explained death through after-life, resurrection or
+11:28
+reincarnation.  But philosophers tried to explain without relying on gods and the supernatural. So they
+11:34
+used reason to ask two important questions, which became the two main pillars of philosophy.
+11:41
+One, what is really out there, and two, how we know it. So ontology asks what’s reality
+11:48
+and what things exist or don’t exist, and epistemology asks how we know the world. So
+11:55
+philosophy became a rational tool for humans to understand the world, the meaning of life and how to navigate the world correctly. So early philosophers studied all sciences, from
+12:04
+stars to frogs and everything in between. But if you boiled it down, the three main subjects for philosophers were the physical world, the origin of life and the human mind.
+12:15
+In other words, what is the world and how does it work? What’s life and how works?
+12:21
+And what’s the human mind and how does it work? So remember that these three main topics also play philosophy’s own downfall. 
+12:29
+As time passed, philosophy became too big and too sophisticated so it gave birth to other disciplines. In 15th and 16th century Europe, the first baby was born. For example,
+12:39
+Galileo, Copernicus, and Newton were the pioneers of physics, so physicists took over the job
+12:45
+of studying the world, the universe, stars, planets and matter as a whole. A big load
+12:51
+was off the philosophers’ shoulders now, so they focused more on metaphysics, i.e.
+12:57
+the meaning of life and the property of the human mind.  Then in the 18th and 19th century, however, another baby was born. Biology took over the
+13:05
+job of studying life. Philosophers no longer needed to dissect frogs or understand the
+13:10
+human body. An important biologist was Charles Darwin, whose theory of evolution by natural
+13:15
+selection revolutionised everything we knew about life and its origin. So philosophers
+13:21
+were left to only focus on the human mind.  But unfortunately they would snatch that away from philosophers too. In the late 19th century
+13:29
+and early 20th century, philosophy gave birth to its last baby. We call it psychology that
+13:36
+took over the job of studying the human mind. Two big names are Sigmund Freud and Carl Jung
+13:41
+who both placed importance on the subconscious and unconscious mind as greater motivation
+13:47
+in human behaviour. So philosophers didn’t have to diagnose the human mind anymore. Phew,
+13:53
+for centuries philosophers were doing the jobs of four people, a physicist, a biologist,
+13:58
+a psychologist and a philosopher. Now they could enjoy a bit more free time and just sit in their comfy chairs and be philosophers. After all, everyone has to retire at some
+14:09
+point.  But retirement is a tough period in anyone’s life. Without things to do, you either face
+14:14
+an existential crisis, or you become lazy and rot away. So today philosophers have become
+14:20
+a bit lazy on the whole. But also they are a bit out of touch because physics, biology
+14:25
+and psychology have become too specialised so philosophers don’t have the time to rigorously
+14:30
+study all three disciplines. Also they don’t want to get their hands dirty dissecting frogs
+14:35
+or spend hours staring at a telescope to study the stars or spend time with mentally ill patients. 
+14:41
+So the big question is: what is the purpose of philosophy today? Should it unify physics,
+14:46
+biology, and psychology once again? Or should it find a new path for itself. Nietzsche,
+14:51
+the first to fully diagnose the problem of western philosophy, took philosophy back to the cave through his Zarathustra who instead of prophesying for a single god and the divine,
+15:02
+tells us about a new type of human, ubermensch who instead of following social values, create
+15:09
+new ones through their artistic and philosophical works, like the early humans who went to the
+15:14
+cave to gain wisdom. Nietzsche criticised philosophy for being too rational, not passionate
+15:19
+enough. Philosophy is an old man who has produced many amazing kids and now feels lost for purpose.
+15:25
+Why? It’s very simple. It lacks passion. Philosophy started as a rational tool, but
+15:31
+it was also its downfall. As we saw, sciences like physics, biology took over the rational side of philosophy and psychology took over the irrational side of philosophy to put it
+15:41
+very crudely. What’s left? Not much. Is philosophy completely doomed? Well, not quite.
+15:47
+I have an answer.  Earlier I mentioned the three big human weapons: instincts, emotions and reason. Biology and
+15:54
+Psychology are taking care of the instinct and the unconscious. Literature takes care
+15:59
+of human emotions through storytelling. And science takes care of reason. So is philosophy
+16:06
+without a chair now? Not quite. My solution is human intuition. There you go. A new philosophy
+16:12
+should be based on human intuition.  What’s intuition? In a nutshell, instincts are mostly unconscious, reason is mostly conscious
+16:23
+and emotions are somewhere in the middle. Where does intuition fit in? It’s somewhere
+16:29
+between instinct, the hard rock foundation and reason, the hard rock roof over your head.
+16:35
+So intuition is fluid between two solid surfaces and also right next to emotions, which is
+16:42
+more volatile and even more fluid. Intuition is a layer deeper than rationality and a level
+16:47
+above instinct. So the new philosophy should be based on intuition because it has direct
+16:53
+access to instinct but also reason. So in a way it fits right between the unconscious psychology and conscious rational sciences like physics and biology. Scientists don’t
+17:03
+utilise intuition, so it’s a perfect tool for philosophy to understand and explain the
+17:08
+world.  Why intuition? An intuition-based philosophy can equip us with a better weapon to cope
+17:14
+with suffering. Rationality through sciences provides us with security, physical utility
+17:19
+and comfort through medicine and technology, like a traditional father would. Science builds
+17:24
+your house, produces food and clothes. Emotions provide you with love and care like a traditional
+17:30
+mother would, which is literature and stories. Intuition provides you the ability to have
+17:36
+insights, original ideas, inventiveness, and the ability to connect dots so you have a
+17:41
+goal or mission in life or relevance in society. Intuition is fast, snappy and in-the-moment
+17:47
+insight or genius that allows societies move forwards. In fact most inventions and discoveries
+17:53
+can be attributed to intuition, not rational thinking. Reason is slow, instinct is too
+17:59
+rigid and emotions clouds your judgment in the moment, but intuition is hit and miss.
+18:04
+When it hits, it sparks a new light. So, is there a philosopher who bases his philosophy on intuition? I’m glad you asked. Yes, there
+18:14
+is. Henri Bergson, a French philosopher, argued that intuition can vitalise life and gives
+18:19
+us a new spark. As Nietzsche argued, reason-based philosophy has become too stale. For Bergson,
+18:26
+intuition is the closest thing to a direct experience of something. For example, if you want to know a city, you can read all the maps and photographs of all the buildings,
+18:35
+but it cannot be as good as if you walk the streets of that city. For example, you can
+18:40
+never fully convey the taste of an apple to someone who has never eaten an apple. That
+18:46
+intuitive experience is the closest we humans get to experiencing the taste of an apple.
+18:52
+So intuition takes us back to our nature, while reason is moving us away from nature.
+18:57
+Of course, Bergson is famous for his philosophy of time, creativity and humour. He thought
+19:02
+intuition and life go together. We know reason tries to tame our natural instincts and emotions.
+19:08
+Rightly so, but it can also go too far in taming us into a docile animal with no vitality.
+19:14
+Bergson’s philosophy is called vitalism because he wanted to liberate us from the
+19:20
+chain of reason.  So philosophy started as a rational tool to understand the world, life and the human mind.
+19:28
+Then it gave away those roles to physicists, biologists and psychologists. Now it’s almost
+19:33
+become redundant so we need a new intuitive philosophy.  But to really understand philosophy, and where it stands today, we need to know the history
+19:41
+of philosophy, its various schools, approaches, eastern and western, humanists and animalists,
+19:47
+rationalists and empiricists, social philosophy vs individual philosophy. So in the following episodes, I will go through human philosophy to give you an overview of the entire 2,500
+19:56
+years of human philosophy.  Next, I will explain some of the common philosophical terms like what is the difference between
+20:03
+ontology vs epistemology, physics vs metaphysics, rationalism vs empiricism, humanism vs utilitarianism,
+20:12
+existentialism vs postmodernism, and more. Stay tuned.  Philosophy in 17 Words
+Philosophical terms
+20:20
+Previously I discussed that philosophy at its core deals with two fundamental questions. What is and how we know it. Those two questions in turn, lead to other questions, like how
+20:30
+we should live our lives. So in this segment I will look at some important philosophical
+20:36
+terms, questions and various branches of philosophy. For example, what are the differences between
+20:41
+ontology and epistemology, or between reason and logic, or between humanism and utilitarianism,
+20:48
+or between existentialism and postmodernism. What is metaphysics? What is the difference
+20:53
+between rationalism and empiricism? And what’s phenomenology? And most importantly why we
+20:58
+grapple with the biggest question today between egalitarianism and elitism. 
+21:06
+Ontology vs Epistemology: Early philosophy was based on two main questions. What is reality
+21:11
+which became ontology and how we know it which is epistemology. So ontology asks what is
+21:18
+and what is not, and epistemology asks how we know the thing that exists or doesn’t
+21:24
+exist. For example, according to ontological philosophy, humans are either animals or not
+21:29
+animals. If not animals, therefore humans are sacred and fundamentally valuable. It’s
+21:35
+accepted as a foundation based on your belief, so murdering a human being is one of the most
+21:41
+serious crimes. So thou shalt not kill is based on the ontological notion that human
+21:46
+life is sacred. So ontological philosophy gave birth to sciences in order to understand
+21:52
+the world, nature and human biology. Aristotle is usually considered the father of modern
+21:58
+sciences. Epistemology, on the other hand, is about how we gather knowledge. A good example
+22:03
+is how we know what we know. Immanuel Kant said we can never know reality as it is, but
+22:09
+we only know things on a limited level. Why? Because everything has to funnel through the
+22:15
+human mind, which is structured in a way that categorizes things in a certain way. In other words we humans put a structure onto the world based on how the human mind works, and the
+22:26
+world in itself is unknowable to us because we cannot get out our human mind. We can never
+22:32
+know the thing in itself. Michel Foucault went a step further saying that knowledge is power, meaning those in possession of science and technology have immense power over others.
+22:44
+He said there is no impartial or power-free science. Knowledge is a tool in the hands
+22:50
+of the powerful. I will discuss this more later. So to sum up, ontology is the philosophy of existence, while epistemology is the philosophy of knowledge of that existence. 
+23:03
+Metaphysics vs physics: Physics was part of philosophical studies until a few centuries ago before it became a separate discipline. Physics mainly studies matter, from the smallest
+23:14
+particles to the biggest stars. Metaphysics, however, is the study of what is beyond the
+23:20
+physical world, like ideas, forms, and soul, which is closer to religious ideas of god
+23:27
+and and spirits. A scientist might say human consciousness is rooted in matter and would
+23:33
+not exist without brain cells. A metaphysician, on the other hand, might say, consciousness
+23:38
+is independent of matter, either comes from a higher power or the universe itself is conscious. So
+23:44
+physics is the study of physical matter while metaphysic is the study non-physical entities.
+23:53
+Reason vs Logic: Logic has its origins in mathematics. For example 2+2=4 is logical
+24:01
+because it follows a very rigid rule that gives you one answer. But logic is also used
+24:06
+as the language of philosophy in order to communicate philosophical ideas. So logic is like a foundation on which philosophical debates take place. Without logic, it is very
+24:16
+hard to talk to others because in order for a discussion to take place, there has to be some ground, basic rules on which all philosophers agree. So logic is a method of communication
+24:28
+for philosophical arguments. A good example is Ludwig Wittgenstein who wanted to make
+24:33
+communication as precise as possible. Also Bertrand Russell applied mathematics to philosophy.
+24:40
+Reason and logic often go hand-in-hand. Since logic is very rigid, like a computer or a
+24:46
+game of chess, some argue it limits humans’ ability to express things that go beyond logic,
+24:52
+like human emotions and passion. So reason or rationality is somewhat more subjective
+24:58
+and less scientifically rigorous like logic. So reason is often used to persuade people
+25:04
+while logic is outcome independent. In other words if someone uses logic, the outcome might
+25:09
+not benefit the argument while reason is a bit more selective, so people use reason to
+25:15
+support their argument. We often use rationalisation as a negative form of reason used to persuade
+25:21
+people. Logic is more mathematical while reason is more linguistic. 
+25:29
+Rationalism vs empiricism: Rationalism is a school of philosophy that believes we understand
+25:34
+the world based on our prior ability to reason. It places human beings as a special creature
+25:40
+with the ability to know the world, so it has its root in religions that places human beings as an exception to the animal kingdom. In other words, we are pre-assembled with
+25:50
+reason as a tool. A good example of a rationalist is Rene Descartes who famously said I think,
+25:56
+therefore I am. In other words, the ability to rationally think was enough to know our existence. Leibniz  was another famous rationalist. Empiricism, on the other hand, believes that
+26:06
+we know the world through experience. Our thoughts come as a result of experience. We
+26:12
+know the property of fire because we experience the heat. Babies have no fear of fire inside
+26:18
+them from birth. We experience the pain, therefore we associate fire with pain. Empiricism is
+26:24
+more British while rationalism is more continental European, mainly French and German. Famous empiricists were John Lock and David Hume. Empiricism is also close to pragmatism, mostly
+26:35
+associated with northern European cold climates, which make you become more practical. Immanuel
+26:41
+Kant combined rationalism with empiricism in his philosophy, saying that experience
+26:46
+is not enough to know the world. Our own mental structure imposes categories to the world.
+26:52
+In other word, we are not passive, just receiving knowledge through experiences, but we actively
+26:57
+give the world a structure. He said we cannot know the world as it is, but our knowledge
+27:05
+of the world is limited to the limit of the human mental structure. Kant’s philosophy
+27:10
+also gave rise to phenomenology that studies an object relative to our own experience,
+27:17
+not the object in of itself. Kant made a distinction between phenomena, which is how we experience
+27:23
+the world and noumena, which is the world in itself, which we can never know. I will
+27:28
+discuss this later. So for rationalists, we know the world because we know while for empiricists, we know the world because we experience things.
+27:38
+Political philosophy vs Ethics: Ethics is a branch of philosophy that deals with morality,
+27:44
+justice and the legal system. Ethics is more practical and pragmatic while political philosophy
+27:49
+deals with how societies decide what is right and what is wrong and how to live peacefully
+27:55
+in a society and how we punish those who break rules. As a society evolves, so does its morality,
+28:02
+so ethics change. Something that might be morally acceptable a few centuries ago, is
+28:07
+not acceptable today. It also depends on the culture. Some actions are morally right in
+28:12
+one culture, but not in another. Political philosophy is the study of ethics and how it changes.
+28:21
+Egalitarianism vs elitism: One of the most fundamental questions philosophy has grappled over centuries is the idea of equality vs quality. Egalitarian philosophy has its roots
+28:33
+in religions such as Christianity that all humans have equal dignity and are equally
+28:39
+sacred. But egalitarianism as a philosophy became prominent in Europe during the Enlightenment period of the 18th and 19th centuries. Karl Marx is perhaps the most famous egalitarian
+28:49
+philosopher who believed in a communist society where all the resources were shared equally
+28:54
+among people. Elitism on the other hand believes that we should run society based on meritocracy,
+29:00
+meaning not everyone gets a trophy. Some people deserve certain rights and privileges because
+29:06
+they earned those things. Elitism has its roots in nature, because the animal kingdom runs on hierarchy which is part of the evolutionary process. The most famous elitist philosopher
+29:17
+was Fredrick Nietzsche who incidentally lived around the same time as Marx. For Nietzsche,
+29:23
+great artists and philosophers are not the same as ordinary people, therefore should not be treated so. Today, the biggest debate in the west is these two schools of thought,
+29:32
+equality for all or privileges for those who earned them. So egalitarian philosophy believes
+29:38
+in equality for all while elitist philosophy believes in merits.
+29:44
+Humanism vs utilitarianism: Humanism was born in Europe during the Enlightenment in the
+29:49
+18th century, which replaced god with humans. Instead of the divine being in charge of this planet, we rational humans assumed the ownership of this planet. Humanists believe in an egalitarian
+30:01
+world where all humans are equal, which is rooted in religions, a belief that humans are created equal. But in reality that is not true. Not all humans are equal. Some are
+30:11
+more equal than others, as George Orwell famously said in Animal Farm. So in philosophy the
+30:16
+big question is this: which humans should determine our social, political and moral
+30:22
+values? Here comes utilitarianism, a branch of humanism that believes in moral values
+30:27
+that benefit the greatest number of people. Not all humans, but the largest majority of
+30:33
+humans. The word utility focuses on how something benefits someone. Pre-enlightenment world
+30:39
+was dominated by kings and aristocrats while the majority worked to benefit the minority.
+30:45
+With its roots in Machiavelli’s philosophy of end justifies the means, utilitarianism
+30:50
+turned this on its head, instead of the minority, it focused on the majority. All actions should
+30:56
+be judged by their results that bring the greatest happiness for the greatest number of people. Utilitarianism was big in England and the most famous one was Jeremy Bentham
+31:06
+and later Stuart Mill. Today’s democracy is a little like utilitarian majority rule,
+31:12
+at least on paper. Humanism also gave birth to other isms, such as socialism that divides
+31:17
+the world based on class, feminism that divides the world based on gender and nationalism
+31:23
+that divides the world based on nationality or ethnicity or language. So humanism puts
+31:28
+humans in charge of the planet and utilitarianism says the majority of humans. 
+31:36
+  Postmodernism vs Existentialism: Existentialism popularised after the philosophy of Nietzsche argues that everything starts with our existence,
+31:44
+not god or some divine essence. There is no divine spark, but we just develop a sense
+31:50
+of self during our life, nothing is given to us prior to our birth. A famous existentialist
+31:56
+philosopher was Jean-Paul Sartre who said that since we have no essence, we are responsible
+32:01
+to make something of ourselves. He famously said that we are condemned to be free. While
+32:07
+existentialism is concerned with the individual, Postmodernism popularised in France is more
+32:13
+concerned with communities or cultural groups. Just like existentialism it is also rooted
+32:19
+in the philosophy of Nietzsche, specifically in his criticism of a single truth within
+32:25
+the western philosophical tradition. While existentialism focuses on the condition of human existence, postmodernism focuses on the idea of truth and social values. Western
+32:35
+philosophy believed in the single truth, like the idea of a single god. So postmodernism questioned European modernity as a project to unify the whole world around European values
+32:45
+of individualism, freedom and materialism. According to postmodernists all cultures are
+32:51
+as valid as European culture, therefore the world doesn’t have to become like Europe to be considered civilised. Postmodernism is a reaction to modernity which includes
+33:00
+the Enlightenment humanism on the one hand, but colonialism on the other. Postmodernists
+33:05
+put emphasis on power relations, how the weak are forcefully pushed to one side. A famous
+33:12
+postmodernist, Michel Foucault, analysed how the modern state develops effective tools to control people, through the prison system, surveillance, mass education and more. He
+33:23
+argued that even sexuality is a power-dynamics, men oppressing women, which had a huge influence
+33:29
+on third-wave feminism that some argue has become anti-men and anti-masculinity. Foucault
+33:35
+even said all knowledge is tied to power, so there is no independent science, therefore science and technology are tools for the powerful to control the weak. 
+33:45
+So to sum up, the core philosophy includes ontology of existence, epistemology of knowledge
+33:51
+and everything else is a branch of these two. Physics and metaphysics are part of ontology.
+33:57
+Physics deals with matter while metaphysics deals with non-material phenomena such as ideas and consciousness. Reason, logic, rationalism and empiricism are part of epistemology. Reason
+34:07
+is the tool to persuade others, therefore more subjective, while logic is mathematical
+34:13
+and impartial. Rationalism says knowledge comes from within while empiricism says knowledge
+34:19
+only comes from experience or outside.  So outside ontology and epistemology is the philosophy of how to live. Political philosophy
+34:27
+studies morality of good and bad, equality or meritocracy, majority mass or minority
+34:33
+elite. This is also tied to the meaning of life. Existentialism puts emphasis on the
+34:39
+individual while postmodernism puts emphasis on the group identity.  Next, I will look at the differences between eastern and western philosophies, why one
+34:47
+focuses on physical science, while the other on mental well-being. Which we should prioritise,
+34:53
+building rockets to conquer space or do yoga for a more peaceful mind on earth. East vs West [Merchants vs Farmers] [Change World vs Change self]
+Eastern philosophy vs western philosophy
+35:02
+In the 1930s, there was an interesting conversation between the greatest Indian poet, philosopher Tagore and the greatest German scientist, Einstein. The conversation centred on the
+35:12
+idea of reality, truth and beauty. Einstein believed in an objective reality outside the
+35:18
+human, while Tagore insisted on the subjective interpretation of reality. To boil it down,
+35:24
+Einstein believed in the old theory of physics, solid matter existing with or without humans
+35:29
+while Tagore was alluding to the mysterious theory of quantum physics that our perception
+35:34
+or observation of matter is never really objective. The conversation illustrated the difference
+35:40
+in eastern and western ways of thinking about reality. One more pragmatic while the other
+35:45
+more spiritual. Now let’s look at a typical hero in the east and west. 
+35:50
+A western hero wants to change the world to make it better for himself and those around him while an eastern hero wants to change himself. Western superheroes fight evil to
+36:00
+restore justice, peace, and correct the incorrect while Asian heroes either accept their fate
+36:07
+or retreat to the forest for some contemplation. Jesus, perhaps the greatest western hero,
+36:13
+confronted injustice and paid for it with his own life, a sacrifice you can see in Harry
+36:19
+Potter as well. The Buddha, the founder of Buddhism however, went to the forest to change himself. Laozi, the founder of Taoism, retreated to the mountains. In other words western philosophy
+36:28
+is about change while eastern philosophy is more accepting your fate. A great example of this in literature can be seen in the novels of the Japanese British Nobel Prize-winning
+36:38
+author, Kazuo Ishiguro. His characters obey their fate and rarely question their somewhat unfair circumstances. However, a typical hero in the west would rebel against their circumstance
+36:48
+to change the world. Accepting one’s fate or putting up with an unfavourable environment
+36:53
+is seen as a sign of weakness in the west, while those same traits are seen as signs of strength in the east. By the east, my focus is mainly old India, China and Japan. So a
+37:04
+western hero wants to change the world, while an eastern hero wants to change himself to
+37:09
+adapt.  In today’s world, east and west have come together a lot, because western mode of production
+37:14
+i.e. capitalism has taken over the world. But if you look closer and a bit deeper, you see a clear philosophical distinction. And if you go back in time, the distinction appears
+37:24
+more clear. Why has eastern philosophy’s main focus been on mental well-being, happiness
+37:30
+and spirituality, and community while western philosophy’s main focus has been physical
+37:35
+well-being, rational science, technology, materialism and individualism. Of course this is a broad generalisation, as there are so many philosophers on either side who are exceptions
+37:44
+to the rule, but generally speaking the main distinction is spiritualism vs materialism and community vs individualism. So in this video I will look at some of the answers but
+37:54
+also give more detail about the differences between eastern and western philosophy. Does the climate, terrain and the soil have anything to do with it? Are merchants more concerned
+38:03
+with materialism and farmers more with spirituality? Geography terrain Western philosophy as we know has its roots
+38:11
+in ancient Greece and later on in Rome. The Greeks and the Romans were influenced by other civilisations such the Egyptians and the Babylonians. But there are very little or no written records
+38:21
+of an organised philosophy prior to the Greeks. Eastern philosophy has its roots in the Indian
+38:27
+civilisation and the Chinese civilisation. If you look at their geographies, Greece is made of some islands, between the Mediterranean
+38:35
+and the Black Sea. So large bodies of water sandwiching the land areas. So if you want
+38:40
+to move around, all you need is a boat and you could hop from island to island. This allows a much smoother way to move things around. There is less friction on water than
+38:50
+land. The Ancient Greeks heavily relied on imported food due to its soil not being very
+38:55
+fertile. As a result, the Greeks relied on trades which brought goods from Egypt, Mesopotamia,
+39:01
+Central Europe and more. But with this commodity trade, also came ideas and knowledge, so the
+39:07
+region was a hub of cultural, scientific, and technological exchange. This promoted
+39:12
+a more rational discourse which allowed the Greeks to develop a more sophisticated science.
+39:17
+For example Euclid’s Elements is the oldest science book, which I’m sure was influenced by the Egyptians, Babylonians and Phoenicians. Pythagoras developed his mathematics. Aristotle
+39:28
+studied all kinds of things, including animals. In fact the first Greek philosopher Thales
+39:34
+was an olive merchant himself who based his philosophy on water being the most important thing in the world. He famously predicted that good weather i.e. lots of rain produced
+39:43
+lots of olive so he got very rich. So the Greeks relied on trade, which allowed the
+39:49
+exchanges of ideas and practical sciences.  Indian and Chinese civilisations, however, are more centred around rivers and mountains.
+39:57
+In other words, quite different from ancient Greece. India and China were blessed by its many rivers that brought amazing soil from the Himalayas so their agricultural economy
+40:07
+could sustain a huge population in big cities, making China and India mostly self-sufficient.
+40:14
+Trade with other peoples was a plus, but not essential. China’s Yellow and Yangstee Rivers,
+40:19
+and Ancient India’s Indus and Ganges Rivers all start in the snowy mountains of the Himalayas
+40:25
+and traverse for thousands of kilometers which bring the fertile soil. It’s no surprise that both India and China relied on a crop that is incredibly water thirsty. Rice. It’s
+40:35
+also no surprise that Sadhguru, the greatest Indian Guru in the world today has a simple
+40:41
+message: Save the soil. Because soil and farming run really deep in eastern philosophy.
+40:47
+So Greece’s geographical terrain allowed trade to flourish between various peoples
+40:52
+and cultures. While ancient China and India relied on their rivers to bring good soil
+40:57
+to them. The Greeks had to seek food from somewhere else, while the Chinese and Indians waited for their rivers to bring food to them. As a result, from a survival point of view,
+41:07
+for the Greeks, merchants were the most important class of people, while in the east the farmers were the most important class of people. Since merchants are mobile while farmers are stationary,
+41:17
+because you cannot carry around your land, this allowed the Greeks to be more open-minded to new ideas, new technology and new sciences. Merchants are also less attached to their
+41:27
+ways, therefore easily follow the market or commodity. Today you sell rice, tomorrow potato.
+41:33
+Farmers, however, have a harder time to adapt, and change quickly. So western philosophy
+41:39
+geared more towards pragmatic sciences while eastern philosophy geared more towards spiritualism. If merchants don’t like something, they change, but if farmers don’t get enough
+41:48
+water, they wait for the following season or accept their fate. It’s harder to leave your land and migrate. So western philosophy is more change-oriented while eastern philosophy
+41:58
+is more fatalistic. In other words, you change yourself.
+42:04
+Climate to progress Climate also plays a role. India and China tend to be warmer throughout the year, so it makes sense to be in the here and now,
+42:09
+which Buddhism teaches. Also seasons play a predictable pattern every year and people live a more cyclical life. Monsoon comes every year. Rivers flood at a specific time of the
+42:19
+year. In a way, it was very similar to the Egyptian way of life around the River Nile. Of course, when you rely on a river, you also experience great famines, but they come every
+42:28
+few years or decades. The Greeks navigated the seas where you’re for the most part in control of where you’re going. Meanwhile eastern civilisations were centred around
+42:38
+rivers. On rivers, your course is fixed, the river takes you where the river takes you.
+42:43
+As a result, eastern philosophy is more fatalistic. The fate of humans, animals and plants are
+42:49
+in the hands of the same rivers. It meant that they saw all living beings as part of
+42:54
+a big family, so they didn’t put humans as being outsiders or special or above everybody
+43:01
+else. In Hinduism, Buddhism and Taoism, we are not only from nature, we are nature, just
+43:06
+like other living beings.  The Greeks, however, experienced colder winters so they had to source and accumulate food
+43:12
+for colder days. Since they relied on trade, wars always disrupted the trade routes, which
+43:17
+meant you had to source your food from somewhere else. Merchants relied on peacetime to continue
+43:23
+trade, but they also benefited from wars as certain commodities were more sought-after. It’s the old adage, war fuels the economy as money is moved around faster than peacetime.
+43:33
+Since, things were pretty unpredictable, the Greeks had to think long-term and prepare not just for the cold winter, but for the future, in case of warfare. Future became
+43:42
+the most important time, not here and now, but next month, and next year. You couldn’t afford to be in here and now like a zen Buddhist. So this long-term or linear perception of
+43:51
+time became the dominant way of looking at the world among the Greeks. A famous example is Aristotle’s teleological philosophy that everything has a purpose, usually a single
+44:01
+destination in the future. Original Sin to change the world Western philosophy also through an exchange
+44:06
+with the middle-eastern religions like Judaism, Christianity and later Islam, came to understand
+44:12
+that humans were separate from the animal kingdom. We are kicked out of the Garden of Eden, punished for our mistakes. As a result, you try to compensate for your past mistakes.
+44:21
+You want to correct the incorrect. What do you do? You fight for causes. If you look
+44:27
+at literature, heroes are often people who have sinned or made a terrible mistake. To
+44:32
+redeem themselves, they fight injustice. One way to fight for justice is to make other people’s lives better. Often materially. You study the world, you invent new technology
+44:42
+to make life easier for others.  Eastern philosophers were not looking for material comfort, but more for mental and
+44:48
+spiritual comfort. Buddha and Laozi left the city in their spiritual quest and went to
+44:53
+the mountains and forests. Solitude allows you to seek answers inside you, not on the
+44:59
+outside. Even today most buddhist temples in India, Japan and China are located in the
+45:04
+mountains and forests, away from the crowd, so people can get away from other people. The core doctrine of Buddhism is that material comfort doesn’t make you happy in the long
+45:14
+run.  The Greeks, however, gathered in the city to debate and dialogue like Socrates who would walk around on the streets of Athens asking people questions, while others established
+45:24
+schools like Plato’s Academy or Aristotle’s Lyceum. Western philosophy relied on dialogue
+45:29
+and exchange like merchants do to flourish, learn and improve. The west built universities, churches, and schools in the middle of town and villages so everyone could come, not like
+45:38
+some remote temple that nobody could go to. In eastern philosophy, you don’t force your will on nature to control or change it, but
+45:45
+try to flow with nature. Since both Indian and Chinese civilisations were centred around rivers, often river flow is seen as nature’s way, in which you don’t resist or remove
+45:55
+obstacles in your way but move around those obstacles. In other words, you change yourself, not the outside world. A good example is, in India traffic moves around an obstacle,
+46:04
+be it a cow or an accident. While in the west, a small accident on the road brings everything
+46:09
+to a halt. So eastern philosophy tells you to be more fluid and flexible like yoga and
+46:15
+less rigid. But western philosophy relies on manipulating nature through science and technology to make life easier for humans. As a result, we live in a very comfortable period in history. Millions
+46:24
+of people couldn’t survive to adulthood, but today child morality is at its lowest in history. People live longer, healthier. But this also has negative consequences for
+46:33
+other species on earth as the more comfortable we are, the harder it becomes for some other species in some areas. 
+46:40
+conquer: world vs self Asians are on average physically smaller than Europeans, perhaps due to genetic mutation or sexual selection or possibly due to eating
+46:50
+less protein as farmers rely on rice which is a staple diet in most of Asia. How to cope
+46:56
+with poor diet? Martial arts in China and yoga in India were used to strengthen and
+47:01
+discipline the body. Eastern philosophy is centred on the body as a vehicle to get to a higher place and this also means eastern philosophy is more about avoiding conflict
+47:10
+rather than confronting others. Taoism, Buddhism and Hinduism promote non-violence. Vegetarianism,
+47:15
+although trendy in the west today, has been practiced in the east for thousands of years. Jainism is an Indian religion that promotes a strict vegetarian diet and Gandhi, a pacifist
+47:26
+himself, admired Jainism for that.  Unlike Asians, The Greeks ate a lot of bread, which is four times more protein-rich than
+47:33
+rice. Since the Greek states were constantly fighting against one another, as well as the Persians, they developed the olympic games which was to train soldiers for wars. It’s
+47:43
+no surprise that it was the Greeks who made it all the way to India through Alexander the Great. While we have no records of invading armies from India and China going to Persia
+47:52
+or the Middle East. It was the nomadic Mongols who made it to Europe, not the more sophisticated
+47:58
+civilisations like the Chinese and Indians. In fact the Chinese built walls to shield themselves from the Mongols. And India was ravaged by a series of invasions by the Greeks,
+48:07
+the Persians, the Muslims, the Mongols and even the British. Why? Eastern philosophy is less centred on conquering the world, but conquering yourself. For example,
+48:17
+Buddhism is centered on the inner conflict of fighting or resisting your desires. If
+48:22
+you focus on your inner conflict, you’re less likely to engage in external physical conflicts such as tribal, or ideological. In Hindu yogi teaching, your soul is the real
+48:32
+you, while your physical body is acquired through food you put in your mouth. Not just
+48:37
+that, you also acquire your ego or the sense of self through impressions and experiences with others. So your soul is permanent and your body and ego are temporary, fleeting
+48:47
+and acquired. Now Einstein vs Tagore conversation on the nature of reality makes sense. Einstein
+48:54
+sees an external world while Tagore sees everything internal. In other words, yogi philosophy
+48:59
+is based on the pursuit of becoming one with the universe. Quantum physics has a similar theory that as soon as you observe something, you change it. In other words, we are not
+49:08
+separate from the world or universe, we are with the universe. The world is not outside
+49:14
+us, but we are the universe, it is inside us. So Yoga is one way to tap into or get
+49:20
+closer to your universal soul by taming your body and ego and desires. The idea is to let
+49:26
+your soul control you, not your body control your soul. Eastern philosophy is based on negation of the self, while western philosophy is firmly
+49:34
+rooted in the idea of individual self. As a result of this, the east tends to be more
+49:39
+communitarian where the individual is less important than the community or the universe while the west tends to be more individualistic. Buddhism’s core philosophy is to remove
+49:48
+the self to ease suffering. Wanting or desiring is seen as negative because you’re feeding
+49:54
+the ego.  The Greeks were more of a merchant's mentality to grow more profit and become wealthier and
+49:59
+wealthier. Merchants are more focused on material success and less concerned with the spiritual side of life. As a result, it was the Greeks who developed a more rational and scientific
+50:08
+method to understand the material world. This scientific method allowed objectivity which meant that a Greek scholar could disagree with their mentors. Even thinkers like Plato
+50:18
+openly disagreed with their teacher Socrates, and Aristotle questioned Plato. In the east,
+50:24
+however, openly questioning your teacher was and still is a form of disrespect. Instead
+50:29
+of finding flaws in those older than you, you’re supposed to respect them. This is especially important in Confucianism. Sensei is someone you do not challenge. 
+50:38
+Good vs Evil Western philosophy makes a distinction between good and evil as almost separate entities and separate individuals or even groups. Often
+50:47
+in warfare, the enemy is seen as evil to motivate your soldiers to die in defence of good. This
+50:52
+is true on both sides. So once you assign goodness with one way of seeing the world, the opposite of that is naturally bad or even evil. This battle of good against evil allows
+51:02
+progress. Those victorious can claim goodness. In the east, however, both good and bad are
+51:08
+seen as more psychological and less ideological so good and bad are one or two sides of the
+51:14
+same coin. The Ying and yang in Taoism means every person has dark and light, good and evil built in them. Good and evil coexist, so no matter how much a society progresses,
+51:25
+it doesn’t change the core ying-yang existence. We as humans are neither good nor bad, but
+51:30
+a bit of both. Our job is to understand this so we keep a good balance between the two forces. 
+51:36
+I think the most fundamental difference between eastern and western philosophy is the idea of linear progress in the west versus a cyclical notion in the east, especially in Indian philosophy.
+51:46
+The Greeks believed in progress. Socrates developed his questioning method of getting to the objective truth. Plato introduced the idea of perfection. And Aristotle came up
+51:56
+with telos for purpose. So getting to Socratic truth, Platonic perfection and Aristotelian
+52:02
+telos or purpose gave birth a western progressive philosophy and science. So instead of focusing
+52:08
+too much on the spiritual side of life, the west focused on making the physical life easier
+52:13
+by deploying a scientific method to understand the world and invent technologies that made
+52:19
+life easier. As a result, today most people live a comfortable life thanks to western
+52:24
+civilization. People live longer thanks to western medicine and technology. When survival is no longer an issue, people seek meaning and purpose. So eastern philosophy plays a
+52:34
+major role in bringing inner peace for millions of people in the east as well as in the west
+52:39
+who seek meaning beyond material comfort.  So to sum up, climate, terrain and food impacted how the east and west prioritized philosophical
+52:48
+understanding of the world. The Greeks relied on merchants and trade so the priority went
+52:54
+to practical sciences and rationality. While in the east farming allowed big cities to flourish and people lived longer. As a result, philosophers were seeking happiness not physical
+53:04
+comfort. Life expectancy also grew in the east which allowed more reflection in old age. When young, people seek success but in old age, people search for meaning. 
+53:12
+Next, I will discuss the Greek trio of Socrates, Plato and Aristotle, by looking at their similarities
+53:18
+and differences.  Socrates vs Plato vs Aristotle [The Rational Path] In 399 BCE, the Greek democracy condemned one of the greatest philosophers to death
+Socrates vs Plato vs Aristotle
+53:27
+for spreading bad ideas among the youth. Today, he is considered the father of western philosophy and possibly the father of western civilisation. His tragic death sparked a new human philosophy
+53:38
+that was based on rational thinking, not religious dogma. Who was this man? It was of course,
+53:43
+Mr Socrates. Well, he lost his life, but rationality triumphed. He paid the price with his own
+53:49
+life. It’s no surprise or exaggeration to tell you that western philosophy originated in
+53:55
+Greece, mainly in the city of Athens. Previously I talked about the differences between eastern
+54:01
+and western philosophies due to different terrains, food production, cultural exchanges and so on that gave rise to spiritualism in the east while rationalism in the west. Eastern
+54:13
+philosophy, centred on farming and rivers, became fatalistic while the Greeks, centred
+54:18
+on trade and the seas, became rationalistic. So here, I will talk about three of the most
+54:23
+famous forefathers of western rational philosophy: Socrates, Plato and Aristotle. 
+54:29
+Pre-Socratic philosophy Before I talk about the big three, let me mention a few who came before. The first known Greek philosopher was Thales of Miletus who
+54:37
+said that everything is made of water. Today we know that 60% of the human body and 70%
+54:43
+of our brain are made of water, so he was right. He also used reason to predict how
+54:48
+the weather affected olive harvest and made a lot of money as a result. People at the
+54:54
+time believed a good or bad harvest was in the hands of god. So Thales understood that
+54:59
+it had nothing to do with it, but just good weather. So western philosophy, from the very earliest time, emphasised rationality to understand and manipulate nature to benefit humans and
+55:11
+he was a businessman. Another notable philosopher was Pythagoras, famous for his theorem, a2+b2=c2.
+55:19
+He argued that the world is run by mathematical rules which can be understood through numbers. 
+55:24
+Even musical harmony is ruled by geometrical rules. So Pythagoras based his ideas on mathematical
+55:31
+logic, which is a step deeper and more rigid than rationality. Another logical philosopher
+55:36
+was Parmenides (515-445 BCE) who also used logical thinking and reasoning to prove that human experiences give us a false perception of the world and often contradicts with logical
+55:46
+thinking. So these early Greek philosophers paved the way for rationality to become the method of thinking. 
+55:53
+Socrates: If you have to name one person as the founder
+55:59
+of Western philosophy, one name stands tall above everyone. It’s of course Mr Socrates,
+56:05
+not the football legend from Brazil but an ancient Greek dude who lived between 469 and
+56:11
+399 BCE. He was the true father of western philosophy, because he developed a robust
+56:17
+philosophical method to understand the meaning of life and to expose dogmas. Unlike everyone
+56:22
+else, he did not accept things at face value. His questioning or dialectical method of examining
+56:28
+everything through a series of questions to get to the bottom of things or finding the truth became the basis of modern scientific method. To understand something, you have
+56:38
+to ask questions, like what, where, when, why and how. Once you go through all the questions,
+56:45
+the answer you get tends to be the best answer out there. Today science does the same thing.
+56:50
+Scientific theories are tested through a series of experiments.  Socrates also questioned the purpose of life itself. For him, the purpose of human life
+56:58
+was to be virtuous. How can you be virtuous? Again, you have to examine your life critically.
+57:05
+You cannot sit in your comfortable chair and live in ignorance. Uncomfortable truths are
+57:10
+better than comforting lies. He famously said, the unexamined life is not wroth living. In
+57:16
+other words, ignorance wasn’t bliss but just stupid and unworthy.  This had a massive psychological shift in how people saw the world and themselves. You
+57:26
+couldn’t just rely on gods or even the priests, you had the ability to rationally question things to get to the truth for yourself. The Athenian democracy saw him as a threat in
+57:35
+awakening the youth, so they forced him to sip hemlock poison which killed him in 399
+57:41
+BCE making him a true martyr of philosophy. Socrates was a street philosopher who walked
+57:47
+around the streets of Athens to question people and have a dialogue about life and philosophy. He was like a modern-day provocateur or a whistleblower and authorities don’t like
+57:57
+that.  Socrates’s philosophical legacy was to make truth the most important aim of philosophy. Philosophy wasn’t to tell you comforting lies but it was to challenge you into discomfort.
+58:07
+In western philosophy, Socrates, narrowed its scope into one single truth, which is
+58:13
+the basis of modern science today, searching for the ultimate theory that explains everything.
+58:18
+Quote: “There is only one good, knowledge, and one evil, ignorance.” This single truth
+58:24
+became the cornerstone of western philosophy for almost 2500 years, until the German Nietzsche
+58:31
+questioned it, paving the way for postmodernism that believed in multiples truths. 
+58:36
+Socrates didn’t leave any written records because he was busy on the streets, challenging
+58:42
+strangers about their truths. I wonder if he was around today, how would he challenge people about my truth and your truth? First, people would think he’s crazy and second,
+58:50
+he would go mad with everyone having their own truths. 
+58:57
+Plato After the death of Socrates, the torch was passed to one his students, who also wrote his teachers’ philosophical ideas down.
+59:04
+Plato, who lived between 427 and 347 BCE, having witnessed his teacher executed by the
+59:11
+democratic mobs was an idealist arguing that we all have a perfect idea of something, but
+59:18
+in reality this doesn’t exist. It only exists in our mind as a perfect form of that thing.
+59:24
+There are chairs we see inside a room, but these are just models of a perfect chair that
+59:30
+only exists in our mind. In other words, the chairs that humans make are modeled on the
+59:35
+perfect chair inside the human mind. We see a mere shadow of what reality is on the outside. 
+59:42
+His famous thought experiment, “Allegory of the Cave” illustrates that if you face away from the light source and see your own shadow inside a cave, that’s how we perceive
+59:51
+reality, not what it is but its shadow through our senses. So for Plato, humans come preassembled
+1:00:00
+with all knowledge. In other words, we don’t learn through experiences or senses but it’s
+1:00:07
+all inside. It only comes out when we experience it. Quote: “What we call learning is only
+1:00:14
+a process of recollection.” This makes Plato’s philosophy somewhat counter-intuitive. We
+1:00:20
+think what’s on the outside is the real thing and what we have on the inside, in our mind, is a mere representation of that real object. Plato thinks the opposite. What we
+1:00:30
+see on the outside is the shadow of what’s in our mind. We have an innate knowledge of
+1:00:35
+the world from birth and what we learn is just remembering or recalling those things
+1:00:41
+that are already stored inside us. This is very similar to how the rationalists saw knowledge,
+1:00:46
+which I will discuss later on.  Plato’s idea of knowledge coming from inside us can also be interpreted in terms of the
+1:00:53
+subconscious and Jungian collective subconscious, deeply embedded in us from our evolutionary
+1:00:59
+past. For instance the fear of snake in us is not because we experience snake bites in
+1:01:05
+our own life, but because our ancestors experienced it in the Savanah, in the trees, in the jungle
+1:01:11
+or in a cave. Despite us living in beautiful, safe houses, we still have the inner experience
+1:01:17
+of being in a dark cave. Another example is horror movies. Our desire to see horror movies
+1:01:23
+is simply because we still want to experience the fear from time to time, because that fear
+1:01:28
+is inside us, and horror movies simply stimulate that fear. Sigmund Freud’s dream interpretation
+1:01:34
+is another way to understand Plato. In other words, dreams are our little window into the
+1:01:39
+subconscious world inside us. Fiction writers, artists, musicians often experience a trance-like
+1:01:46
+state when they’re immersed in their art, tapping into their subconscious to bring out
+1:01:51
+an art that is appreciated by many people, simply because they reach a deeper well inside
+1:01:57
+to drink from the collective subconscious knowledge. Despite being the artistic uncle,
+1:02:02
+Plato also had strong opinion about politics. Plato was a republican and saw democracy akin to a mob rule as it killed his teacher, Socrates,
+1:02:12
+so he argued that philosophers were better-suited to rule a society as a republic. Just like
+1:02:17
+Nietzsche, he had a low opinion of the general public as unsuitable to rule a society, while
+1:02:23
+philosophers were better-equipped to rule a society. So he set up his academy where he wanted to cultivate the best minds of his generation, the elites of the society. Today’s
+1:02:33
+university is very much modelled on Plato’s academy where the intellectuals lock horns
+1:02:38
+to discuss ideas and one of those people was Aristotle who graduated from his academy.
+1:02:44
+Plato is called an idealist philosopher, however his student, Aristotle went a different route towards practical knowledge. 
+1:02:51
+So to sum up, Plato’s teacher, Mr Socrates, questioned things to find the truth. Plato
+1:02:57
+said the truth or perfection only exists in the soul, in the mind or in the world of ideas
+1:03:02
+or forms, and only their shadows are perceived through our senses. So Socrates gave philosophy
+1:03:08
+a method of finding the truth, while Plato offered a perfectionist vision of the truth,
+1:03:14
+inside the mind. Now these two come together in Aristotle to provide a basis for modern western philosophy, a progressive perfectionist vision of seeking truth. A single truth. 
+1:03:28
+Aristotle While Plato sat inside a cave, saying that to find the truth, reasoning was superior to real world observation, his student, Aristotle,
+1:03:36
+however, reversed this by getting his hands dirty in dissecting frogs and gazing at the
+1:03:42
+stars to understand the real world. Aristotle who lived between 384 and 322 BCE argued that
+1:03:50
+truth is not inside of us, but it’s on the outside in the real world. Truth in other
+1:03:55
+words is in the world around us. His method was evidence-based research, akin to modern
+1:04:02
+science. He actually went to the fields to study animals and sea creatures. 
+1:04:07
+He questioned Plato’s ideal form, saying that if a man is a model of an ideal form,
+1:04:12
+who is the ideal form model of? It’s the same argument, if god created us, who created
+1:04:17
+god and who created the god who created god, which goes to infinity.  Aristotle put human senses to work and argued that our observation of things is the best
+1:04:26
+way to find the truth. He said everything in the world can be categorised by their substance, quantity, place, time and so forth. Today modern science classifies animals into species,
+1:04:36
+earth into continents and oceans, rocks and minerals. This categorisation helps humans
+1:04:42
+to gain knowledge much faster and more effectively. He famously said humans are rational animals.
+1:04:48
+Aristotle also said that everything has a purpose or telos or an end goal. The purpose
+1:04:53
+of this video is to educate people about philosophy. As a result, Aristotle’s telos has become
+1:04:59
+a branch of philosophy called teleology that looks at things through their purpose, not
+1:05:04
+their essence. So when we look at a chair, we don’t think of wood and trees and forests,
+1:05:10
+but we think of sitting on it. A chair is to be sat on, not considered a piece of tree. So Aristotle’s telos put purpose before essence. As a result western philosophy is
+1:05:20
+a very purpose-driven way of thinking, which emphasises something’s utility or use before
+1:05:26
+its essence. As a result western cultures value solution to problems, efficiency and
+1:05:32
+pragmatism that make things better. Today, modern science develops useful technology, so it’s heavily utility-based. We like useful
+1:05:40
+things. The purpose of science is to develop technology to make life easier. What’s the purpose of human civilization? To reach perfection, which is a kind of Aristotelian teleology.
+1:05:50
+So Aristotle’s telos coincided with the Christian view that we’re heading towards an apocalypse or heaven, a perfectionist utopia where you’re happy, and blissful. In science,
+1:06:00
+we’re heading towards a perfect understanding of the universe and life. So telos allows
+1:06:05
+us to make plans, have goals and strive towards something. Without an end goal it is hard
+1:06:10
+to motivate ourselves to do things.  Just like Plato, he also set up a school, called Lyceum, where he gathered the best
+1:06:18
+minds of his generation to study. One of his most famous students was a man who took his
+1:06:24
+teleological teaching to conquer the world. It was, of course, Alexander the Great who made it all the way to India in his attempt to conquer the world. 
+1:06:33
+I should point out an important Greek philosopher who lived outside the rationality-dominated
+1:06:38
+school. It was Epicurus whose philosophy centred on happiness, not rationality or truth so
+1:06:44
+instead of an academy or school, he set up a hippy-style Garden where he gathered his
+1:06:49
+friends to talk philosophy while enjoying life in peace and tranquility. Epicurus understood
+1:06:55
+that the biggest enemy of happiness is also the main reason humans invented philosophy.
+1:07:01
+What is it? The fear of death. The entire foundation of human philosophy rests on this
+1:07:07
+mystery. Epicurus had a very clever answer. He said the fear of death is irrational. It
+1:07:12
+makes no sense. Why? For the simple reason that we do not know death. Not only that we
+1:07:19
+cannot know death. Because nobody has returned from death to tell us what it is. Death is just one way street. Now that we know the fact that we do not and cannot know death,
+1:07:27
+why fear it? We are afraid of lions because we know they can eat us. We are are afraid
+1:07:33
+of fire because we know the pain. But we cannot and will not know death, it’s totally irrational
+1:07:39
+to be afraid of it. Instead of worrying about death, we should make the most of this life by living in and spreading peace and happiness among others. Later his philosophy was adapted
+1:07:49
+into utilitarianism to maximise happiness for the majority of people. But despite philosophy
+1:07:55
+of happiness, Epicurus remains an outsider in western philosophy. 
+1:08:00
+So to sum up, Socrates questioned people on the streets of Athens to critically examine things in life, Plato sat inside a cave, not literally though, and asked himself about
+1:08:11
+the ideal form that may have come from god or the human mind, while Aristotle went to
+1:08:17
+the field and got his hands dirty to understand the natural world. Socrates placed virtue
+1:08:22
+in knowledge, and rational truth, while rejecting passion, emotions or faith as dogmatic. This
+1:08:29
+was Nietzsche’s biggest problem with western philosophy, which he squarely blamed on Socrates.
+1:08:34
+Too much rationality ignores human passion and heavily relies on reason which is rigid,
+1:08:40
+inflexible that turns us into machines. Plato, however, retreated to himself and argued that
+1:08:46
+perfection doesn’t exist on the outside but only on the inside, in our head. The world is a terrible place, precisely because it is a skewed model of a perfect form that only
+1:08:56
+exists in our mind. Plato’s ideas were closer to a religious idea of god, so later Christians
+1:09:02
+and Muslims interpreted Plato’s perfect form as god. God is perfect while humans and
+1:09:08
+the world are imperfect images of god. Aristotle said forget about the imperfect world, someone
+1:09:14
+has to go to the fields to study the bloody nature through observation and dissection, so his method was empirical science, which became the basis of medieval Islamic science
+1:09:24
+and later the 16th century European science.  Next, I will talk about the three horses of Eastern philosophy, the Buddha, Lao Tzu and
+1:09:31
+Confucius. Buddha vs Laozi vs Confucius [Nature’s Way] Previously I discussed the Greek trio of Socrates,
+Laozi vs Buddha va Confucius
+1:09:40
+Plato and Aristotle who influenced western philosophy, the three most famous eastern philosophers were Lao Tzu, the founder of Taoism, the Buddha, the founder of Buddhism,
+1:09:50
+and Confucius, the founder of Confucianism. I will mainly focus on their philosophies
+1:09:55
+and less on these religious practices which are quite different in different countries. Eastern philosophical tradition is very rich and complex, so these three philosophers can
+1:10:05
+help us shed lights on eastern spirituality.  Laozi Lao Tzu or Laozi lived in 6th century BCE
+1:10:15
+in China and is said to be the author of Tao Te Ching or Dao de Jing, which is the foundational
+1:10:21
+text of Taoism, a philosophy that traces its origin to shamanism and hermeticism. Taoism
+1:10:28
+which is also sometimes called Daoism literally means the way or the enlightened path or nature’s
+1:10:35
+way which is spontaneous, eternal, unnameable and undefinable. Quote: “Nature does not
+1:10:42
+hurry, yet everything is accomplished.” It’s simply the flow of the universe, such
+1:10:47
+as gravity allowing rivers to flow downward, without any effort. The core idea of Taoism is the doctrine of wu-wei which can be translated as non-resistance
+1:10:57
+or action through inaction. Wei means purposeful and intentional while wu means there is no,
+1:11:05
+or lacking. So literally it means there is no purposeful act. A good metaphor for humans
+1:11:10
+to live their lives by is the river, which the Chinese civilisations relied on. Rivers
+1:11:16
+flow downward, if hindered by a rock, instead of moving the rock, they flow around it. This
+1:11:22
+means we should live our lives in alignment or harmoniously with nature, not against nature. 
+1:11:28
+Another important idea of Taoism is ying and yang or good and evil, which live together inside everyone so we all have the dark and light. You cannot separate the two. I think
+1:11:39
+this fundamentally differs from a western religion in which good and evil are thought to be separate entities. However, according to Taoism, they are two sides of the same
+1:11:48
+coin. Everything is neither completely negative nor positive, but both. In other words, a
+1:11:54
+saint has his sins and a sinner has his redeeming qualities. In Taoism, humans are one manifestation
+1:12:02
+of the Tao or the way, you could say just one species among millions of other species. 
+1:12:08
+Lao Tzu emphasised not to follow one’s desire, goals or ambitions but rather find your natural
+1:12:14
+flow. Ziran, which literally means naturally, is a Taoist value which emphasises natural
+1:12:20
+creativity and spontaneity. As a result Taoism is seen as the religion of the artists who
+1:12:26
+live a more intuitive and spontaneous life that mimics nature’s flow. You could even
+1:12:31
+make a connection with Carl Jung’s psychology of the collective subconscious—deeply embedded
+1:12:37
+memories of our species, or those species before—that artists tap into by finding
+1:12:43
+the flow of nature.  This artistic flow is much more elaborated in another book titled the Zhuangzi, supposedly
+1:12:50
+authored by another important figure in Taoism, a man called Zhuangzi. The book has many humorous
+1:12:56
+stories, allegories, and anecdotes, with the most famous one being the Butterfly Dream, in which Zhuang Zhuo wakes up one morning from a dream in which he had turned into a
+1:13:05
+butterfly. Now he is perplexed and asks this mind-blowing question: Was he dreaming of
+1:13:11
+a butterfly or a butterfly dreaming Zhuang Zhuo? The answer is not important here, but
+1:13:16
+the question itself is the main point. We humans seek clear answers or clarity, but
+1:13:22
+nature doesn’t care about separate entities or separation of different species. Nature
+1:13:27
+is one big, perpetual flow. From nature’s perspective, a human and a butterfly are simply
+1:13:32
+two different manifestations of the same thing. Even the state of being awake and dreaming
+1:13:38
+are false distinctions or dichotomy, because they’re one and the same thing. For example
+1:13:44
+artists, novelists, musicians often dream or daydream their best works because they
+1:13:49
+find the flow of nature’s collective subconsciousness.  Laozi is said to have lived during the Zhuo Dynasty whose capital was close to the Yellow
+1:13:58
+River, therefore the river is often used as a metaphor for Taoism. Later in Life Laozi is said to have traveled west where he wrote Dao De Jing in some remote mountains, and
+1:14:08
+then vanished into thin air, also a great metaphor in how to flow in life like a wind
+1:14:14
+and river. Today Laozi’s ideas are extremely important but also deeply embedded into the
+1:14:19
+cultures of China, Korea and Japan. To give you an example, people in Japan tend to be less confrontational, tend to avoid conflict which fits in with the Taoist idea of non-resistance. 
+1:14:30
+So to sum up, Laozi or Taoism philosophy centres on the idea of not going against the natural
+1:14:35
+flow, but flowing with it. Not resisting nature's way, but going with it.
+1:14:43
+Buddha Siddartha Gautama or the Buddha (563-483 BCE) lived a luxurious life in a rich Northern Indian family, but he wasn’t happy. He learnt
+1:14:55
+that suffering was universal among the poor and rich, young and old, and men and women.
+1:15:00
+But why do we suffer? The reason we suffer is because of our desires for pleasure. The more we get the more we
+1:15:06
+want. If we have a big house, next time we will not be fulfilled if we don't get an even
+1:15:12
+bigger house, bigger cars, more partners, more wealth, friends, subscribers and followers.
+1:15:18
+At no point, we can satisfactorily say, it is enough. A good example is addiction. If
+1:15:24
+a small dose makes you high today, but you need a larger dose to give you the same high
+1:15:29
+a month later or a year later. In other words, as you experience more, your desires also
+1:15:34
+grow bigger. So life is just an endless cycle of desire, fulfillment of that desire and
+1:15:40
+more desires. How to solve this problem?  To ease suffering, according to Buddhism we should nip our wants in the bud by detaching
+1:15:48
+ourselves from our desires for worldly possessions. Don’t chase things and be happy in the moment.
+1:15:55
+But it is easier said than done. Everyone says it is a good idea to be content with what you have right now. But curbing your desires is not an easy job. Why is it so hard? 
+1:16:04
+Here is when Buddhism gets really interesting and profoundly deep. We all think, we are
+1:16:09
+who we are. We have a sense of the self we call me and you. We think it is a somewhat solid entity. In western religions, this self is imparted to us from god. It’s real. This
+1:16:20
+individual self is genuine and for the most part unchangeable. According to Buddhism, however, you’re wrong. Why? The self or ego is not real. It’s just an illusion or
+1:16:31
+a mirage or a temporary imposter attached to our body, you could say like a parasite
+1:16:36
+it lives on us. What does it do inside us? This imposter self fuels our desires, ambitions,
+1:16:43
+and goals. In other words, it uses us to go out in the world and achieve things but at the end of the day we still don’t feel fulfilled. Especially when we achieve everything and
+1:16:52
+death hits us, we lose our shit because we went to so much trouble acquiring our wealth,
+1:16:58
+fame, power and now death is snatching it all away from us. It’s a bad deal. So what is the solution, Mr Buddha?
+1:17:05
+His answer might shock you. According to Buddha, to be truly enlightened and blissful or to
+1:17:10
+achieve the nirvana stage, which means we must kill the imposter self. This thing we
+1:17:16
+call the self or ego is the source of all of our desires. To not desire anything, we must remove the self. According to Buddhism, our soul is the real thing, and also very
+1:17:26
+much universal while the self is a kind of picture we put in our head every time we are
+1:17:31
+born in our various reincarnations. One way to understand this is perhaps through Mr Plato
+1:17:37
+who also said that the idea of things is the perfect form, and the real thing on the outside is a mere shadow of the real thing. In Buddhism, your soul is genuine, eternal and universal
+1:17:47
+while your body and ego are temporary and fleeting. We are not separate from the universe, but a tiny part of a big whole. To become happy and one with the universe, you must
+1:17:56
+detach yourself from your desires, and kill the self, through meditations, solitude and rigorous physical and mental discipline. Quote: “A disciplined mind brings happiness.” 
+1:18:07
+This is very similar to Schopenhauer’s philosophy of the blind universal will which is a force
+1:18:12
+beyond our control yet it rules most of what we do in life. There is a disagreement whether Schopenhauer reached the same conclusion independent of Buddhism and Hinduism or he was influenced
+1:18:23
+by these Indian philosophies. I will discuss Schopenhauer’s philosophy in more detail later on. So according to Buddhism to be truly enlightened is to not see yourself as a separate
+1:18:33
+self, but part of a bigger whole, part of a conscious universe. So true inner peace comes not from outside, for example by achieving your goals, but from inside once you become
+1:18:43
+enlightened.  Buddha’s teachings through various forms of Buddhism are incredibly important in most
+1:18:49
+of East Asia. Buddhism has also become one of the most influential philosophies in the west too as it emphasizes individual inner journey rather than collective prayers in
+1:18:58
+a church.  So to sum up, Buddha as a rich, powerful prince but wasn’t fulfilled in life and realised
+1:19:04
+that all humans suffer because of our desires. To ease suffering, we should detach ourselves
+1:19:10
+from our desires and to be truly blissful, we should eliminate the self or ego through meditation and mental discipline. 
+1:19:17
+Confucius  While both Laozi and the Buddha escaped society
+1:19:23
+for some solitude and inner peace, Confucius (551-479 BCE) however, tried to solve the
+1:19:32
+practical socio-political questions like how we can live politically and socially together in peace and harmony or how to organise society in way that is peaceful. So his philosophy
+1:19:42
+is less individualistic but more concerned about the collective existence, especially in big cities and countries. 
+1:19:49
+To find a great solution for socio-political coexistence, Confucius looked at how nature
+1:19:55
+organizes things, especially in the animal kingdom. One of the biggest problems, and
+1:20:00
+the main source of wars and violence in a human society is when there is confusion as
+1:20:05
+to who stands where. Who gets what? Who owns what? Who is responsible for what? He understood
+1:20:11
+that the best method was the natural hierarchy or a pyramid social system. Without an established
+1:20:17
+system of hierarchy and authority, there is chaos and confusion. And hierarchy allows
+1:20:23
+everyone to know their place, so there is no confusion or conflict as to which chair
+1:20:28
+belongs to who. Removing social confusion was Confucius’s main task (pun intended)
+1:20:35
+Now, not only everyone knows their own place, they also know other people’s places too.
+1:20:40
+So instead of a police watching everyone or patrolling the whole society, now everyone
+1:20:46
+can watch each other. If someone sits in the wrong chair, other people can tell him that it is not his seat. So if everyone knows their place, everyone can watch everyone so nobody
+1:20:56
+dares to disrupt the social harmony. So kings at the top of the pyramid and everyone else
+1:21:01
+take their place based on their ranks and age just like in a game of chess, perhaps the most logical game humans have invented. Confucius also realised that everything starts
+1:21:11
+in the family, because it is the first line of defence against chaos. A solid family structure
+1:21:17
+means a solid foundation for a society. Inside the family, the man is at the top, then wife,
+1:21:23
+then sons and then daughters.  One of the most common criticisms against Confucius is the possibility of tyranny. Those
+1:21:30
+in positions of power can abuse it. Confucius also emphasised responsibility and duty. Those
+1:21:36
+at the top are responsible to protect those below them. A king is responsible to keep people safe and a man in the family is responsible to protect and provide for his wife and children.
+1:21:46
+Those below, in return, are loyal and follow their superiors and do as asked. To understand
+1:21:53
+Confucianism, you should look things not just from an individual point of view, but from a collective perspective. For example, if your body parts didn’t function in alignment
+1:22:02
+with the rest of your body, you are sick and needs treatment. Society is the same. If one or few members push things in the opposite direction, there is violence, which is a social
+1:22:11
+illness. You might think it is pretty outdated, but you would be surprised that this Confucian
+1:22:16
+hierarchy is a pretty efficient system which is at work in modern companies, because we hear this cliche that no work is done by a committee, which is true in most situations.
+1:22:27
+Most corporate structure follows a strict and rigid hierarchy and a chain of command. In the animal kingdom, a hierarchy is often achieved through violence, but Confucius says,
+1:22:37
+since it is natural we might as well adopt it to reduce violence. Of course, in the modern age, revolutions are a common occurrence. Those at the bottom, rebel against the establishment.
+1:22:48
+That’s why Confucius emphasised duty and responsibility. When a ruler becomes tyrannical,
+1:22:54
+he fails his duty. It all comes down to respecting your role in society. Quote: ”Without feelings
+1:23:00
+of respect, what is there to distinguish men from beasts?” Today, China, Korea and Japan have adopted these Confucian methods in sorting out social
+1:23:10
+situations where seniority and juniority plays a major role in schools, universities and
+1:23:16
+companies. Loyalty and respect are significant in Confucianism, but also meritocracy. As
+1:23:22
+a result, traditionally China had a strict civil service examination for centuries and
+1:23:28
+only the very bright and intelligent were recruited for high military and government jobs. 
+1:23:33
+In the 20th century, however, Mao, the egalitarian socialist, tried to dismantle the Confucian class hierarchy through the Cultural Revolution that caused great pain for a lot of people.
+1:23:44
+But of course, the Chinese Communist Party replaced the old class-based Confucian hierarchy with a political hierarchy. Many economists attribute China’s rapid economic development
+1:23:53
+to this efficient hierarchical system as China was run like a company, the president being the CEO of China. Things get done quickly, but of course it also comes at a cost of many
+1:24:03
+voices being suppressed. Traditionally the Chinese Communist Party used to distance itself from the archaic Confucius philosophy, because it contradicts the egalitarian philosophy
+1:24:14
+of socialism in which everyone is equal and there is no hierarchy, at least on paper. But in reality, every human society has been hierarchical. Even today, China is slowly
+1:24:23
+moving towards a more Confucian philosophy. As China’s developing, not only it is utilising
+1:24:29
+a Confucian hierarchy for its efficiency, but also in cultivating a more robust culture of meritocracy and traditional masculinity which were central to Confucian philosophy. 
+1:24:40
+Conclusion To sum up, Laozi’s teaching is not to resist or destroy, or go against nature, but to flow with nature. As a result, he says we should
+1:24:48
+be more intuitive and spontaneous. In other words, humans are of nature, so it’s time
+1:24:54
+we forgot our humanness and live in the flow of nature.  The Buddha taught that suffering is universal because of our goals, desires and ambitions.
+1:25:03
+To find true peace is to look inside, not to outside material success. And to be truly
+1:25:08
+happy is to kill your ego or the self that has ambition and desires. 
+1:25:14
+Confucius tackled the socio-political question of how to live a peaceful coexistence through a hierarchical system in which everyone knows their place and position in society. 
+1:25:22
+While the Greeks were questioning truth, authority, poking holes at the natural world to understand
+1:25:27
+its property, those in the east were seeking a harmonious life with nature, not only with
+1:25:33
+other humans but with all creatures on earth. The Greeks disagreed with each other, while the Asians tried to find agreement, consensus not only among humans, but also between humans
+1:25:44
+and the natural world.  The fact these three figures founded a religion of their own, while the three Greeks did not,
+1:25:50
+shows a fundamental difference between eastern and western philosophy. In the east, societies are generally more group-centred while in the west it is more individual-centred. But
+1:26:00
+if you really think about it, the philosophies of these three eastern thinkers, is highly individualised. They put the emphasis on the individual to take charge of themselves. Don’t
+1:26:12
+change the world, change yourself. So while eastern social fabric is communitarian, the
+1:26:18
+philosophies are individualistic as they put demand on the individual to take responsibility for changing themselves so they adapt to the society they live in. Don’t change others
+1:26:28
+but yourself. Don’t change nature but yourself. The Greeks, however, focused on how to change
+1:26:34
+nature as quickly, efficiently as possible. So in the west, individuality is static, god-given or born while social fabric is dynamic. In
+1:26:43
+other words, in western philosophy the individual is solid and society and nature malleable,
+1:26:49
+and changeable. In the east, however, nature as well as society’s fabrics are static
+1:26:54
+while the individual is changeable. In other words, do not attempt to change others or nature because it is easier to change yourself. If you cannot fit in with others, take a good
+1:27:04
+look at yourself and find what’s wrong with you. People in the east are less likely to complain about the world, instead try to adapt to the world. Before you complain that I’m
+1:27:13
+generalising too much, sit back and relax or look at yourself in the mirror. Don’t worry, I am kidding. Next, I will discuss two distinct approaches to philosophy: animalism that sees humans
+1:27:23
+as animals therefore needed to be herded to bring order, and humanism that sees all humans
+1:27:29
+as equal to one another. In other words, elitism vs egalitarianism or carnivorous vs herbivorous
+1:27:37
+philosophies.  Humanism vs Animalism (Egalitarianism vs Elitism) Previously I discussed eastern philosophy
+Purpose of Human Civilisation: Humanism vs Animalism
+1:27:44
+versus western philosophy, and how one employed rationality to tame nature while the other
+1:27:49
+employed spirituality to tame the individual. Today I will look at two core social philosophical
+1:27:56
+schools: humanism vs animalism. Humanism is a belief that humans are somewhat special,
+1:28:02
+either created by god or not, therefore the purpose of any society is to protect all humans
+1:28:08
+equally. Humanism is also called egalitarianism with a few babies of its own like socialism,
+1:28:16
+feminism, liberalism and postmodernism. Elitism, or animalism on the other hand is a belief that some humans are more equal than
+1:28:24
+others, especially the rulers, kings and elite class of people or the talented people as
+1:28:30
+in meritocracy. This is because hierarchy is very much part of the animal kingdom, the
+1:28:36
+strongest wins the race. But as human civilisation has progressed and we have become more efficient
+1:28:42
+in taming nature, the historical trend is moving towards a more egalitarian human society.
+1:28:48
+So here is the most important question, was Karl Marx right that the future is communism?
+1:28:54
+But first let me explain the history of these two divergent philosophical approaches and
+1:28:59
+introduce some of the most important philosophers on each side. Humanism has its roots in religions. In the west, Christianity, and Judaism at its core
+1:29:08
+believed in all humans being equal in the eye of god. Augustine of Hippo (354-430 CE)
+1:29:13
+believed all humans have free will to choose between good and evil. He also said that one
+1:29:18
+should love everyone equality. Quote: “The measure of love is to love without measure.”
+1:29:24
+Thomas Aquinas (1225-74), another Christian philosopher, argued that God created the world and all humans were equal, especially in freedom. Quote: “By nature all men are equal in liberty,
+1:29:35
+but not in other endowments.”  Outside the religious tradition, the first true humanist might be Mozi who lived in 4th
+1:29:42
+century BC in China. He advocated a kind of universal humanism. At the time Confucianism
+1:29:48
+was the dominant philosophy in China in which society was divided based on ranks and hierarchies,
+1:29:53
+so Mozi believed in universal reciprocation. Quote: “Universal love is really the way
+1:29:59
+of the sage-kings. It is what gives peace to the rulers and sustenance to the people.”
+1:30:06
+This is an early form of humanism. Another early figure was the 6th century Persian philosopher
+1:30:11
+Mazdak who promoted economic equality among all people. He even protested against the
+1:30:16
+rich having many wives while the poor having no wife. His idea became quite influential
+1:30:22
+in the Persian empire, but soon fizzled out.  On the opposite of humanism we have a school of elitist philosophy we can term as realism
+1:30:30
+as it is called in politics. The basic idea of realism is that humans are chaotic and erratic animals that need to be tamed, controlled and ruled, not through honesty or fairness
+1:30:41
+but through deception or brute force.  One of the earliest realist philosophers was Sun Tzu who lived in China between 544-496
+1:30:52
+BCE. In his famous book, the Art of War, employs nature’s tactics, such as camouflage, deception
+1:30:59
+and even submission to survive or dominate others, especially in wars. His philosophy
+1:31:04
+was to win at all costs, so to speak. For him, life is not about fairness or equality, it was about winning which is at the heart of evolutionary biology. You only survive
+1:31:15
+or thrive if you win nature’s battles and overcome hurdles.  Some of his strategies in the Art of War are socially counter-intuitive like he says you
+1:31:25
+must appear small when you’re big and appear big when you’re small in order to deceive your enemy. In Sun Tzu’s Art of War honesty is the worst policy. Quote: “When the enemy
+1:31:36
+is relaxed, make them toil. When full, starve them. When settled, make them move.” In
+1:31:42
+other words, stand tall when you’re small and sit small when you’re tall. These are some basic survival tactics in the wild, for example in the battle between the carnivores
+1:31:51
+and herbivores, a gazelle jumps higher to show its health so the cheetahs don’t bother
+1:31:58
+chasing them. Some of the tactics are also to throw off your enemy like when negotiating, ask for less when you want more, which is still in use in corporate capitalism. The
+1:32:07
+Art of War’s basic rules are to know yourself, your enemy, your environment, time your attack
+1:32:14
+and truce, while at the same time make sure your enemy knows nothing truthful about you.
+1:32:19
+Be a peacock when small and be a mouse when big. So this is the earliest form of political
+1:32:25
+deception in order to prolong your rule over others. The winners are those who lie the
+1:32:32
+best.  So Sun Tzu borrowed his philosophy from the animal kingdom where there is no morality,
+1:32:37
+only winners.  Machiavelli who lived between 1469 and 1527, was an Italian thinker who is famous for his
+1:32:47
+book The Prince in which he advises the rulers to use any methods available to them to achieve
+1:32:53
+their goal of maximising their power and domination over other humans. In other words, the famous
+1:33:00
+line that the end justifies the means, which goes contrary to the humanist and religious
+1:33:05
+morality of protecting life. Quote: “It is better to be feared than loved, if you
+1:33:11
+cannot be both.” He argued that a ruler must be like a savage lion when needed and
+1:33:16
+a cunning fox when needed. So brute force combined with cunning deception are needed
+1:33:21
+in order to rule over society. Why? Because humans are savages and they’re waiting for
+1:33:27
+your weakest moment to strike and take away your power like Hamlet’s uncle in Shakespeare’s
+1:33:33
+play Hamlet. Machiavelli lived a few centuries before Darwin’s theory of evolution by natural
+1:33:38
+selection, but he still understood the savage nature of human politics. In other words,
+1:33:44
+morality is for the weak, and power and deception are for the strong. Quote: “He who wishes
+1:33:49
+to be obeyed must know how to command.” In order to prevent a rebellion, a ruler must
+1:33:55
+show terror and fear for its subject to behave well. Those at the top of society have the
+1:34:01
+most to lose, so they can use any means available to make sure they keep their power and wealth.
+1:34:06
+They use the police, the legal system and whatever else so nobody can take those things away from them. 
+1:34:12
+So, just like Sun Tzu, Machiavelli, based his philosophy on the animal kingdom. It’s not about equality or fairness, but it’s about winning and conquering. 
+1:34:22
+Thomas Hobbes was an English philosopher who lived between 1588 and 1679. In his book Leviathan,
+1:34:30
+he argued that humans are savages and only a civilised state can protect humans from
+1:34:35
+each other. In other words, humans have established states to escape the brutality of nature.
+1:34:41
+According to him, humans are physical machines in nature but when entering society they give
+1:34:47
+up their savage tendencies and power to live peacefully. Quote: "Life in the state of nature
+1:34:54
+is solitary, poor, nasty, brutish and short.” The fear of violence is always there. To escape
+1:35:00
+it, humans have made a contract with their governing rulers, in return for their obedience and freedom, the state provides them with peace, justice, protection for them and their
+1:35:11
+property. Just like Machiavelli, Hobbes believed in the use of force to tame people. Quote:
+1:35:16
+“Not believing in force is the same as not believing in gravitation.” Despite his argument
+1:35:23
+for a civilised state, he understood that humans were in essence savage animals.  So Sun Tzu drew on the animal kingdom saying deception was better than honesty. Machiavelli
+1:35:33
+went even further saying that deception combined with brute force are justified to tame humans.
+1:35:39
+Hobbes argued a civilised state has every right to tame the unruly humans.  
+1:35:45
+Now let’s look at a few philosophers who opposed this animalistic philosophy based on the natural world. These philosophers saw human life as somewhat sacred. 
+1:35:54
+Voltaire who lived between 1694 and 1777 was a French philosopher who believed in a kind
+1:36:03
+of universal individual liberty, not tyranny as Machiavelli suggested. Unlike Machiavelli’s
+1:36:08
+iron rule, he believed in open scepticism and freedom of expression for all, so anyone
+1:36:14
+could criticise or even rebel against the dominant traditions and dogmas. Quote: “Men
+1:36:20
+are equal; it is not birth but virtue that makes the difference.” In other words, he
+1:36:25
+didn’t support the idea that the rulers and kings had a birthright authority over truth or liberty. The Church or the state should not hold absolute power. Instead everyone,
+1:36:37
+despite their socio-economic status, deserves the right to have an education and access to knowledge. Today, liberal democracies in the west follow the principles of free speech
+1:36:47
+and individual autonomy, ideas that were promoted by Voltaire, so he is often considered the
+1:36:53
+father of liberal individualism, because he believed everyone irrespective of their socio-economic
+1:36:59
+class deserved to be equally free. So nature works with hierarchy but Voltaire argued that
+1:37:05
+every human deserves equal freedom to express themselves.   Jean-Jacque Rousseau who lived between 1712-1778 was born in Geneva. Unlike Hobbes who said
+1:37:18
+man is born savage but tamed in society, Rousseau believed that humans are naturally good, but
+1:37:25
+they are contaminated or tainted in society to act terrible. He famously said: “Man
+1:37:30
+is born free, yet he is everywhere in chains.” This was especially true in big cities where
+1:37:36
+people turned selfish. He believed in the country people were naturally nicer, friendlier
+1:37:41
+and fairer, but once people migrated to the cities instead of becoming more civilised,
+1:37:47
+ironically they turned into selfish animals.  Unlike Hobbes’s top down approach, Rousseau believed in a bottom-up approach arguing that
+1:37:55
+the masses should be able to run the state, not some select individuals like kings and
+1:38:01
+generals. His famous book, the Social Contract is said to have influenced the French Revolution
+1:38:06
+in 1789, in which the anti-monarchy revolutionaries toppled the king and France became a republic.
+1:38:13
+Of course it didn’t last very long, but it sowed the seed of freedom, equality and
+1:38:18
+brotherhood which resulted in three major ideologies of socialism, liberalism and nationalism
+1:38:24
+which have dominated politics for centuries ever since. So Rousseau’s egalitarian approach
+1:38:30
+had a huge influence in political history.  So to sum up, the humanists argue that since life is too short, let’s all be more equal,
+1:38:40
+fairer and nicer to each other. Mozi argued for an equal universal education, Rousseau
+1:38:45
+for equal political participation and Voltaire for equal freedom for everyone to express
+1:38:51
+themselves. Political animists or elitists on the other hand, argue that since life’s too short, it is all about winning, conquering and dominating others, so they didn’t trust
+1:39:01
+all humans therefore promoted a more robust political regime that didn’t allow people to be free to challenge the ruler or the state. Sun Tzu used deception, Machiavelli justified
+1:39:12
+repression and Hobbes promoted state as a tool to control human savages. 
+1:39:17
+As a historical trend, we are moving towards an egalitarian humanist future, at least in
+1:39:23
+principle. Also this was Karl Marx’s prediction that slowly we are heading towards a communist
+1:39:29
+utopia. In reality however, all human societies are highly unequal and hierarchical, and it’s
+1:39:35
+unlikely that this will change for the foreseeable future. Humanism invented by humans while
+1:39:40
+elitism or animalism invented by nature and evolutionary biology. We are all born unequal
+1:39:47
+in beauty, talent, intellect, and physical strength, which contribute to societies being
+1:39:53
+dominated by those who are naturally blessed, either with talent or beauty. But despite
+1:39:58
+nature not being helpful in producing us equally, there is a deep desire among humans for equality,
+1:40:04
+fairness and justice. You could say that human kind is called kind for a reason.
+1:40:10
+As human civilization has improved, and the more we have tamed nature we have become more
+1:40:16
+confident that a humanist utopia is possible so in recent centuries egalitarian philosophy
+1:40:22
+has become more dominant, which a few centuries ago must have been unthinkable. Socialist
+1:40:28
+experiments showed the failure of egalitarianism in Russia, but the idea is still pretty strong
+1:40:33
+in the world. So who knows, in the future, humans might produce human babies in labs
+1:40:39
+who are identical in all attributes to create a truly egalitarian utopia. Once you produce
+1:40:45
+baby outside the natural process, equality is a lot easier to achieve. Identical babies
+1:40:51
+produce identical adults. A Brave New World kind of world. But will we be happy?
+1:40:58
+Next, I will discuss the battle between pursuing knowledge and pursuing happiness. In other
+1:41:03
+words, those who pursue knowledge to gain power and those who pursue happiness and peace
+1:41:08
+to live a simpler life. Knowledge vs Happiness: What’s the Purpose of Life? [Power vs Peace]
+Purpose of Human Life: Knowledge vs Happiness
+1:41:14
+Previously I discussed the two philosophical approaches to organising society, egalitarian humanism versus hierarchical elitism. Here, I will discuss a fundamental question about
+1:41:23
+the meaning of life. Are we here to know the world or be happy? Are we here to seek knowledge
+1:41:29
+or happiness? So in this segment, I will look at a few important philosophers. On the knowledge
+1:41:34
+side, I will look at the philosophy of Francis Bacon, Martin Heidegger and Michel Foucault. On the happiness side, I will look at the philosophy of Erasmus, Michel Montaigne and
+1:41:44
+Bertrand Russell.  As I discussed earlier, philosophy is concerned mainly with two questions: ontology asks what
+1:41:50
+is out there and epistemology asks how we know it, so knowledge is fundamental to philosophy.
+1:41:57
+You could say we humans are hard-wired to see, understand, analyse and interpret the
+1:42:02
+world. In other words, we are curious creatures so the development of modern science is just a byproduct of this curiosity and our thirst for knowledge drives innovation and social
+1:42:12
+change. But we are also creatures who seek happiness. While knowledge can empower us, it doesn’t
+1:42:19
+make us happy. While knowledge can transform our lives, it doesn’t guarantee happiness or peace of mind. 
+1:42:26
+As I discussed earlier, the first philosopher to methodically seek the truth was Socrates
+1:42:32
+and later Aristotle improved it by giving the approach a scientific and empirical tinge
+1:42:37
+to it. But it wasn’t until centuries later that the scientific approach was perfected in Europe, mainly in 15th and 16th centuries through the works of scientists such as Copernicus,
+1:42:47
+Galileo and Newton.  During this period, the English philosopher, scientist and politician, Francis Bacon who
+1:42:54
+lived between 1561 and 1626, looked at knowledge from an empirical point of view. He graduated
+1:43:01
+from the University of Cambridge, and he’s often considered the first empiricist, a school of philosophy later developed by other British philosophers such as John Locke and David
+1:43:10
+Hume. Bacon placed the source of knowledge in our experience through our senses. At the
+1:43:16
+time, the Church held the view that knowledge came from God but science was challenging that. Church relied on people not knowing, and not questioning things. When nobody knows
+1:43:26
+things, the church could control information and become the source of knowledge. Today, you could say the big media companies have the same mindset. 
+1:43:34
+But Bacon understood the power of knowledge and wanted to educate everyone because he believed that through knowledge you could empower the poor so they could better their
+1:43:43
+lives. This is an early idea of public education, which today we take for granted. Bacon understood
+1:43:49
+that humans are on the one hand knowledge seekers, but on the other hand, humans also have some blindspots like religious belief, tribal affiliations, and love of money which
+1:44:00
+prevent us from getting to the truth. Another problem we have as humans is that we project
+1:44:05
+our own limited experience to the world. Bacon argued that science, however, doesn’t look
+1:44:11
+at an individual but looks at the majority to generalise. It’s through generalisation
+1:44:17
+that you get closer to the truth. For instance, if one person experiences something, it is subjective and unreliable but if 10, 20,100 or more people experience the same thing,
+1:44:29
+then you can generalise and make science out of it. Understanding generality is an immense
+1:44:34
+power, according to Francis Bacon. So knowledge not only opens the knower’s mind, it also
+1:44:39
+empowers them to change their lives for the better. Of course, Bacon lived at a time, when people had very little so education and knowledge could transform a person’s life
+1:44:51
+immeasurably. Desiderius Erasmus who lived between 1466 and 1536 was a Dutch philosopher who wrote
+1:44:58
+a very influential book called In Praise of Folly. Unlike Francis Bacon, Erasmus argued
+1:45:04
+to be happy, naivety and ignorance are more important than knowing. For him the purpose
+1:45:09
+of life is not to gain power but to be content. He was writing at the time when Europe was waking up to have a Renaissance, a resurgence in scientific and rational pursuit, which
+1:45:19
+went against the teachings of the church to have faith in god. Erasmus a Christian himself,
+1:45:25
+while criticizing the corruption in the Catholic church, argued that to be happy, a little faith and ignorance were vitally important. His philosophy was taken up by fiction writers
+1:45:35
+such as Cervantes, the author of Don Quixote and later the Russian writer, Fyodor Dostoevsky.
+1:45:40
+The goal of life is not to know everything but to lead a simple life. Knowledge or power doesn’t make you happy but simplicity and folly do. It’s the old adage that ignorance
+1:45:51
+is bliss, which goes completely counter to the age of the Enlightenment and rationality.
+1:45:56
+So Erasmus said that being an idiot was the surest way to be happy. 
+1:46:03
+Michel de Montaigne who lived between 1533 and 1592 was a French philosopher who had
+1:46:09
+a very curious childhood. Although born into a wealthy family, he spent his first three
+1:46:14
+years of childhood in the house of a peasant so he could learn the life of the poor. This
+1:46:20
+must have had a profound influence on him later on in life. If Erasmus said folly was
+1:46:25
+a good medicine for happiness, Montaigne argued that to be happy one should live a simple
+1:46:30
+life. Instead of seeking the company of many people, one should try to live a more solitary
+1:46:36
+life, because society can corrupt you, either morally or intellectually.  In today’s social media world of chasing likes and online attention and validation,
+1:46:46
+his message resonates with a lot of people. We always try to seek the validation of our
+1:46:51
+peers like some addictive drug, to an extent that we are never satisfied. Montaigne says,
+1:46:57
+to have a peaceful life, don’t chase other people’s approval or glory or fame which
+1:47:02
+makes us pretentious and fake most of the time. He argued that attention seekers are
+1:47:07
+not original thinkers, but rather suffers from herd mentality or tribalism which in
+1:47:13
+the heat of the crowd or moment turns us into mobs, we commit horrendous crimes and only
+1:47:19
+later realise how stupid it was. To prevent becoming a mob, Montaigne argued that once
+1:47:25
+you disentangle yourself from the group, crowd, or mobs, you develop a clarity of mind or
+1:47:30
+an inner tranquility. It’s not only good for your happiness, but also good for intellectual
+1:47:36
+and moral integrity, because solitude allows you to develop yourself. To have a lasting
+1:47:42
+name, writers and artists should not be bogged down to today’s politics and tribalism. Montaigne’s idea of solitude also inspired Nietzsche who was extremely critical of the
+1:47:54
+masses or mobs or tribal thinking. I will discuss Nietzsche later on. As modernity made mass education the norm, and the crowded cities habitat for the majority
+1:48:04
+of people, life’s meaning became even more acute for the modern man. Knowledge of the
+1:48:10
+world wasn’t enough to have a meaningful life, we needed something else.  Martin Heidegger who lived between 1889 and 1976, was a German philosopher who turned
+1:48:22
+the lens onto himself. Francis Bacon, like Aristotle, was interested in knowing the outside
+1:48:28
+world, but Heidegger, like Diogenes of Sinope, wanted to know the human being itself. In
+1:48:34
+his famous book Being and Time, instead of asking what human being is, he asked how it
+1:48:40
+is like to be human. What’s that experience like? Why? The simple answer is that we are
+1:48:46
+scientists who happen to be also the subject of science. When you study animals, we are
+1:48:52
+outsiders, but when you study human beings, we are insiders.  Heidegger didn’t want to have an abstract answer, instead he wanted to know to have
+1:49:00
+a concrete answer to the question of being, which is incidentally the root of the word
+1:49:06
+ontology in Greek. So what’s his answer? Heidegger measured life as a finite phenomena,
+1:49:12
+starting at birth and ending in death. Just a line that has a beginning and an end. Now,
+1:49:18
+unlike other animals, we know death. We even anticipate it. The knowledge of death makes
+1:49:24
+us anxious and fearful so to cope we tend to not think about it on a daily basis. It’s
+1:49:30
+either a coping mechanism or simply we do not have time to think about it every day
+1:49:35
+as we are busy with work and life. So we are the being who is aware of death but we also
+1:49:41
+try not to think about it.  That’s precisely Heidegger’s answer. Human beings or beings are to be aware of death.
+1:49:49
+Instead of making us anxious or depressed, he thinks it empowers us. This knowledge of
+1:49:55
+death gives our life authenticity and meaning. So if Bacon said knowledge of the world empowers
+1:50:01
+us to better our life physically, Heidegger says, the knowledge of death gives our life
+1:50:06
+meaning and empowers us to live fully and authentically. 
+1:50:12
+Bertrand Russell who lived between 1872 and 1970 was a British philosopher who was deeply
+1:50:18
+steeped in the logical and mathematical side of philosophy, just like Ludwig Wittgenstein
+1:50:23
+whom he influenced. He used a logical and rational approach, to argue that to be happy,
+1:50:29
+one should work less. You could say, he is responding to Marx who argued that workers
+1:50:34
+are exploited by the rich. But he is also responding to the northern European work ethics,
+1:50:39
+which states that work is morally good in itself, therefore this morality, according
+1:50:44
+to some, was responsible for modern capitalism. Russell, however, argued that seeing work
+1:50:49
+as a morally good thing was not only irrational, but also made a few people very rich while
+1:50:55
+the majority very unhappy. Why? Because not all kinds of work are the same. Some are good
+1:51:02
+and some are not good. Some are meaningful and some are not. To bundle all as a good
+1:51:07
+thing is not logical. He concluded that working less increases human happiness. So instead
+1:51:13
+of working yourself to death, you should enjoy life more. Do other activities. Today, a lot
+1:51:18
+of people are so busy working long hours that they lose sight of their well-being and happiness. This is especially true for men, because we are more drawn to numbers just like Bertrand
+1:51:29
+Russell was. We watch growth graphs and become obsessed with it. We work one day and then
+1:51:34
+extrapolate that to a week, a month and then a year. So if we work this many days, we will
+1:51:40
+have this much money and as a result we lose sight of the fact that life is meant to be lived, not worked to death. So Russell argued that to be happy, work less. He lived to be
+1:51:49
+90 years old.  Michel Foucault who lived between 1926 and 1984 was a French philosopher. Unlike Bacon
+1:51:58
+and Heidegger, he saw knowledge as a cynical tool of repression. Foucault looked at modernity
+1:52:04
+through the lens of Nietzsche, saying that modern rationality wasn’t liberating humans
+1:52:10
+but creating a more robust chain to control us. He famously studied the prison system,
+1:52:15
+in how prisons are designed to control us, either directly through imprisonment or indirectly
+1:52:21
+through the fear of it. He argued that those who have access to science and knowledge use
+1:52:26
+it to discipline the rest of us through the education system as well as the legal system. 
+1:52:32
+Foucault argued that knowledge is a tool. Science is a tool. Rationality is a tool. But mostly for the powerful elite because they have access to all of them, while the
+1:52:40
+majority of us are mere subjects. Foucault was also inspired by Kant whose epistemological
+1:52:47
+revolution argued that our knowledge of reality is not totally objective, but rather we see
+1:52:52
+the world the way we see because we impose our own mental structure on the world. Foucault
+1:52:58
+even argued that man or mankind itself is a recent invention. 
+1:53:04
+So to sum up, on the knowledge side, Francis Bacon understood that our knowledge of the world could empower us to better our lives. Heidegger argued that our knowledge of death
+1:53:13
+can give our life more meaning and authenticity. Foucault, however, said everything is invented,
+1:53:18
+there is nothing solid to understand. Knowledge is just a tool for power to manipulate nature
+1:53:24
+and other humans.  So to sum up, on the happiness side, Erasmus argued that folly, ignorance or naivety is
+1:53:31
+a good thing to have to lead a happier life. We have all seen children. As we grow older,
+1:53:37
+we lose that naivety and become a bit more miserable. Montaigne argued that don’t follow the crowd, instead seek some solitude to cultivate your own inner peace. Don’t seek validation
+1:53:48
+from others like a drug addict. The higher you go, the more you seek to get high and
+1:53:53
+higher. No mountain is high enough. So listen to Montaigne because he came down the mountain to settle in a hut. Even his name means Montaigne, so climb yourself and your ego, not other
+1:54:05
+people’s validation. Bertrand Russell argued that work is not a morally good or bad thing,
+1:54:10
+so we should prioritize happiness over work. Work to live or live to work. I should really
+1:54:16
+listen to this. But I want to have more subscribers. Montaigne, help!  So knowledge can make your physical life better or make you more successful financially or
+1:54:25
+boost your social standing, but it might decrease your overall happiness. Knowing things also
+1:54:31
+makes us humans very cynical about the world, just like Foucault said that all knowledge is power and all authorities want to suppress you. Naivety, on the other hand, might make
+1:54:40
+your physical life harder, as you don’t have everything figured out, but it can also lead you to a more long-lasting happiness as you trust other people and rely on other
+1:54:49
+people, which brings a level of sincerity in yourself and those around you. So knowledge makes you successful but it could also cynical, while ignorance hinders your success, it could
+1:55:00
+lead to a more blissful life. What do you think? Next, I will discuss the battle between rationalists and empiricists leading to Immanuel Kant’s
+1:55:09
+great breakthrough in philosophical knowledge. Rationalists vs empiricists vs Kant (How we know reality)
+Rationalism vs Empiricism & Kant
+1:55:15
+Previously I discussed the question whether our life purpose is to seek knowledge or seek happiness. In this segment I will look at one of the biggest battles in philosophy between
+1:55:23
+the rationalists, mostly mainland Europeans who argue that knowledge is somewhat innate inside us, and the empiricists, mainly British who argue that knowledge comes from experience.
+1:55:34
+Immanuel Kant brought the two together. If western philosophy was a two sided funnel, Kant would be the narrow part, so everything before him is squeezed through him and after
+1:55:44
+him, Hegel and Schopenhauer moved philosophy in two directions. Hegel went historical and
+1:55:50
+rational, while Schopenhauer went psychological and subconscious. I will discuss these two philosophical approaches later on.
+1:55:58
+Rationalism is a school of philosophy that relies on human reason to understand the world. Reason itself is an innate human property. In other words, we are born with the ability
+1:56:07
+to reason and early rationalists saw reason as a god-given gift. 
+1:56:12
+The father of rationalism is Rene Descartes who lived between 1596 and 1650. He was a
+1:56:17
+French philosopher and scientist who famously did his thought experiment. He sat down in his armchair and asked the simple question, what if everything we know is just a dream.
+1:56:27
+Nothing exists in reality.  In other words, to prove that he existed, he did the opposite,
+1:56:32
+he doubted his own existence. Then he said even if everything was a dream, the dreamer
+1:56:38
+has to be real, otherwise there will be no dreaming without a dreamer or doubt without
+1:56:43
+a doubter so he said the most famous line in philosophy, “I think, therefore I am.”
+1:56:48
+Even if you doubt your own existence, this doubt is real.  According to Descartes we get knowledge or ideas in three different ways: some come from
+1:56:57
+our experiences, some derived from reason, and some ideas are innate inside us, presumably
+1:57:03
+from god. So rationalists like Rene Descartes argue that we have an innate knowledge of the world and as we grow, we simply unfold that knowledge to see things more clearly.
+1:57:13
+In a way rationalists are like Plato in saying that our knowledge of the world inside us and learning is just recollection of that innate knowledge. So the seed is inside us,
+1:57:23
+not outside. The other famous rationalist was Gottfried Leibniz who lived between 1646 and 1716. Today
+1:57:31
+we know him more because of the famous argument he had with Issac Newton over the invention
+1:57:36
+of Calculus. Leibniz, however, was also a great philosopher who made a distinction between rational truth and factual truth. In other words, our knowledge of the world relies on
+1:57:46
+our innate reason but also on human experience. The things we experience on the outside builds
+1:57:52
+on and solidifies our inner knowledge. For Leibniz, the human mind is a small representation of the entire universe. In other words, the
+1:58:01
+human mind contains everything in the universe. If the universe is rational, then the human
+1:58:06
+mind is a representation of that rationality. However, he conceded that human rationality is not always adequate to understand the world so we need human experiences to complement
+1:58:16
+our rational faculties. One of the biggest problems for Leibniz was his belief in god,
+1:58:21
+so he attempted to reconcile scientific empiricism with the idea of god who knows it all. In
+1:58:27
+doing so, Leibniz argued for two different forms of truths. The empirical truths we gain through experiences add to our rational truths which we innately have or god-given.
+1:58:38
+So to sum up, rationalists argue that humans are naturally equipped to utilize reason to understand the world, with or without the need of observation or animal senses. In other
+1:58:48
+words, we don’t need experiences to know the world. We simply know it, because for the most part god has imparted us with innate knowledge or ability of reasoning. 
+1:58:57
+Empiricists, however, disagreed, saying we understand the world, not innately, but through experience and empirical data we gather from the world through our human senses. Our mind
+1:59:07
+is a blank slate without experience.  John Locke who lived between 1632 and 1704, around the same time as Leibniz, was a pioneer
+1:59:18
+of empiricism who said that everything we know about the world has come to us from our experience. He gave the example of new-born babies to show that we humans have not a single
+1:59:28
+idea from birth. We simply learn by observing and experiencing things. Quote: “If we attentively
+1:59:35
+consider newborn children, we shall have little reason to think that they bring many ideas into the world with them.” Locke understood that while we may not have innate ideas from
+1:59:45
+birth, we do have the ability to learn a language which may be innate. This was later developed
+1:59:51
+by Noam Chomsky in his famous theory of universal grammar that humans are hardwired to learn
+1:59:56
+a language and its structure. So John Locke concluded that all knowledge we gain, we gain through experience. 
+2:00:06
+David Hume who lived between 1711 and 76 built on the John Locke’s idea of empirical experience
+2:00:13
+as a source of knowledge and further argued that not only we understand the world through observation and experiences, but we are also be able to categorize things as a kind customary
+2:00:23
+habit which guide us through life. Hume argues that if you see a tree, then another, then
+2:00:29
+another, and at some point you see a pattern or category. This you call trees. We have
+2:00:34
+no notion of trees from birth. We are like blank slates as babies and only through encounters
+2:00:40
+with the outside world, we begin to form knowledge of the outside world. The same with night and day. As you see the cycle being repeated, you begin to expect it as a kind of custom
+2:00:50
+that night turns into day and day turns into night and the cycle becomes a customary knowledge.
+2:00:56
+This over time becomes ideas and beliefs. Over time they turn into what the rationalists call innate knowledge. Hume says they are nothing but old impressions and perceptions
+2:01:06
+over time. As knowledge is passed on from generation to generation, it may seem innate,
+2:01:11
+which is nothing but someone’s experience. So David Hume, added custom as a kind of repeated
+2:01:17
+experience or common knowledge and argued that we learn things from experience and it is not innate. 
+2:01:23
+So the rationalists believed we humans are equipped with some innate knowledge of the world at birth, while the empiricists argued that we are blank slates and only through
+2:01:31
+our experiences we gain knowledge of the world. In other words, rationalists see knowledge flow from inside-out like a torch shedding light on the outside, while the empiricists
+2:01:42
+see knowledge flow from outside like a window lighting a room. 
+2:01:47
+Here comes the German giant, Immanuel Kant who lived between 1724 and 1804.  Kant took
+2:01:53
+up the challenge of reconciling these two divergent schools of philosophy. To solve the problem between the rationalists and the empiricists, Kant devised a new theory that
+2:02:03
+divided the world into two: phenomena and noumena. Phenomena is the world of experiences,
+2:02:08
+how we understand the world through our bodily senses. Things we see, hear, touch and smell
+2:02:14
+and observe and study. Noumena, on the other hand, is the world in itself, which we can never truly know. For example we can touch and study a rock, but we cannot truly understand
+2:02:24
+what it feels to be a rock. As a result our knowledge of the rock is not complete, it is limited and partial.
+2:02:31
+Kant argued that when we’re receiving information through experience, however, we are not passive receivers, instead we humans also impose our own structures to the world. We categorize
+2:02:41
+things into rocks, trees, animals and whatnot. The world we see is a reflection of the mental
+2:02:47
+structure we put out to the world. Rocks and trees may not have any notion of being such,
+2:02:53
+but humans have imposed such categories onto them. In other words, we are not passive knowledge
+2:02:58
+receivers but actively imposing our own structure on things. 
+2:03:03
+Now Kant brings the rationalists and empiricists together. Rationalists argue everything is inside us, while empiricists say everything is outside us, and Kant says we are sort of
+2:03:13
+on the threshold of outside and inside.  Like a kind of window glass, in the middle of inside and outside. Our inner mental structure shapes how we experience the world. For example,
+2:03:25
+a good analogy would be fishing. To catch a fish, a fisherman throws a net. If the holes
+2:03:31
+in your net are too large, the fish escape, and if the net has no hole, it catches more
+2:03:37
+water than fish. So the fish is the outside world while the net we throw is our mental
+2:03:43
+structure we put out to capture the experience as knowledge.  We humans probe the world through our innate mental structure which catches the outside
+2:03:51
+experience-based knowledge. So for Kant reason and experience go hand in hand in understanding
+2:03:56
+the world. Without the net, you cannot catch. You need both reason and experience to understand
+2:04:02
+the world. This he called his Copernican Revolution. Why? Because in the middle ages, people believed
+2:04:08
+the sun was orbiting the earth, and Copernicus said the earth is orbiting the sun. Kant did
+2:04:15
+the same. Empiricists say knowledge comes from outside, and Kant says yes, but not only we actively seek the outside knowledge, but it also goes through us so our mental structure
+2:04:25
+determines reality on the outside. In other words, our human method puts a structure to
+2:04:31
+the world that would not exist without humans. And this structure makes it easy for us to
+2:04:37
+understand and manipulate the world. Imagine we are not human, we might have a very different
+2:04:42
+understanding of the world.  So to sum up, the rationalists think reason is more important than experience in our pursuit
+2:04:49
+of knowledge. Our reason is like a torch that allows us to see things. The empiricists,
+2:04:55
+however, counter-argue that experience is primary and reason is secondary. Our senses
+2:05:00
+act like a window that lets light in so we understand things. Kant says we humans are
+2:05:06
+both a torch and a window because our mental structure allows us to experience and understand
+2:05:11
+the world better, faster and more effectively. Without a good method or an effective tool
+2:05:16
+and structure, our experiences are all over the place.  The debate is still not over though. Despite Kant uniting the two epistemological approaches
+2:05:25
+in philosophy, there are still people who think one way or another. Our modern science is leaning more to the empiricists' camp while most psychologists lean more towards not the
+2:05:36
+rationalist but the irrational subconscious or the unconscious in determining how we understand
+2:05:41
+the world. So the debate has shifted from reason to passion and in some cases to intuition.
+2:05:47
+It’s not rationality but intuition that allows us to understand the world.  Next, I will discuss what motivates human action by looking at two of Kant’s famous
+2:05:57
+successors, who went in very different directions. Schopenhauer went psychologically towards
+2:06:02
+eastern philosophy while Hegel built his philosophy on history. On the one hand we have Hegel,
+2:06:08
+Marx, Sartre and others who explained human motivation through history and rationality,
+2:06:13
+while on the other hand, Schopenhauer, Kierkegaard and Nietzsche relied on the individual psyche  and human passion to explain human motivation. 
+2:06:20
+Sociological Philosophy: Hegel vs Marx vs Sartre vs Zizek [Reason Motivates Us) Previously I discussed how Immanuel Kant bridged the two philosophical approaches to epistemology,
+Hegel vs Marx vs Sartre vs Zizek
+2:06:30
+rationalism and empiricism. So in western philosophy Kant is like a funnel. He influenced another two branches of philosophy that came after him, which tried to answer some fundamental
+2:06:40
+questions like, what makes us who we are? What motivates our actions? Hegel’s answer
+2:06:45
+was history and rationality while his arch-rival Schopenhauer’s answer was the subconscious
+2:06:51
+will. Hegel’s philosophy went the sociological route, basing human action on history and rationality while Schopenhauer’s philosophy went the psychological route, basing human
+2:07:00
+motivation on the subconscious blind will or human passion.  In this segment, I will look at sociology and rationality by discussing philosophers,
+2:07:09
+including Hegel, Marx, Sartre, and Zizek who argue that we are the product of history. But they didn’t stop there. Since history makes us who we are, it is also our job to
+2:07:19
+make history. So we are not only moulded and shaped by the historical era in which we live
+2:07:25
+in, but also through our own life choices. So social philosophy is built on the philosophy
+2:07:30
+of progressive egalitarianism stating that we are heading towards a perfectionist utopia
+2:07:35
+on the one hand, and materialism stating that the most important aspect of human life is the material success, on the other. Of course, not all of them agreed on this. 
+2:07:45
+It’s important to note that philosophers who came after Kant were in a sense responding to Kant, because his breakthrough in bringing the rationalists and the empiricists together
+2:07:54
+was a huge moment in philosophy.  Georg Hegel who lived between 1770 and 1831, too, responded to Kant. Hegel had two problems
+2:08:05
+with Kant. First, Kant argued that we humans only understand the phenomena but we have
+2:08:11
+no access to noumena or the thing in itself. We can touch a rock but we cannot fully understand
+2:08:17
+it. For Hegel this noumena world, which we can never fully know, looked like an empty
+2:08:22
+abstraction, pure speculation based on Kant’s own assumption. In other words, he just made
+2:08:27
+it up by claiming that such a thing existed in the first place.  Hegel’s second problem with Kant was that he argued that our innate structures or catheterisation
+2:08:37
+by which we interpret the world is fixed. In other words, we use a fish net, or a framework
+2:08:42
+by which we catch a fish or experience, but the net or the framework is always fixed and
+2:08:47
+nobody can change it. For the history buff Hegel everything, including human consciousness,
+2:08:53
+was subject to change through time. History has shown us that humans evolve, so do our
+2:08:58
+tools including the fish net or our ability to reason. In other words, everything has
+2:09:04
+a history. Even a rock has a history. It changes through time. And humans are very much the
+2:09:09
+product of the historical era.  How do we change? Hegel says through dialectic processes. When two opposites collide it makes
+2:09:17
+a third thing that has a bit of both the original things but it is also slightly different characters. 
+2:09:24
+Hegel says every phenomenon or idea or thesis as he called it contains a contradiction within
+2:09:30
+itself, which he called antithesis, and this conflict which is resolved in synthesis, or
+2:09:36
+a newer idea which is an improvement on or different from the thesis and antithesis.
+2:09:41
+Like a child has characteristics of both parents but also different from both. This historical process continues in generating new thesis and antithesis which lead to further synthesis
+2:09:51
+and the history continues. So according to Hegel, Kant was wrong in saying that human mental structure or reason does not change. For Hegel everything is subject to change.
+2:10:00
+It’s important to note that Kant was a lot firmer in his religious belief than Hegel, which explains that Kant sees reason as static while Hegel sees it as malleable and changeable
+2:10:09
+through time. Another reason is of course, the French Revolution as well as the rise of Napoleon, which for the very first time in human history, ordinary people took power
+2:10:18
+from the king, and anyone could become Napoleon. So nothing was fixed. Kant, being a much older
+2:10:25
+man, was fiercely against any kind of revolution that could destabilize the status quo.  For Hegel the world has a history and we are for the most part the product of a historical
+2:10:35
+era. In other words, reality is a historical process, not constant. However, since we are
+2:10:40
+the product of history, we can also affect the course of history through ideas that capture the spirit of an age. For example, Napoleon managed to influence history as he captured
+2:10:50
+the spirit of 19th century Europe, people didn’t believe in the absolute power of kings so demanded change. Hegel can be characterised as a perfectionist rationalist, believing
+2:11:00
+that history is moving towards perfection. Now, Hegel only interpreted history, his student
+2:11:06
+wanted to change history.  Karl Marx who lived between 1818 and 83 learnt a great deal from Hegel. He came to the conclusion
+2:11:16
+that if we are the product of history, our history must be the product of those who came before us. Marx had a problem. Hegel was good at interpreting history, even at recognising
+2:11:27
+the people who were capable of changing, but Marx was more concerned about changing things for the good, especially for the disadvantaged majority who were the real force behind economic
+2:11:38
+production. Marx said the history of our existence has been nothing but a continuous class struggle
+2:11:44
+between the haves and have-nots, the powerful and the powerless, with the powerful enjoying
+2:11:50
+it all and the powerless having a tough time of it. So Marx developed a philosophy of rational
+2:11:56
+materialism, arguing that material inequality was the root of all evils. He argued that
+2:12:02
+humans are fundamentally motivated by material objects so we are rational because we want material things. To solve this inequality, he adopted egalitarianism. For Marx the perfectionist
+2:12:13
+future utopia was an egalitarian society where you only worked for the hours that provided you enough subsistence and the rest of time you could relax on the beach.
+2:12:23
+You can also see traces of Christianity in Marxism, the fight between good and evil culminating
+2:12:28
+in the weak overthrowing the powerful and turning the world into a utopian communist heaven where everyone lives equally and happily ever after. But Marx was not religious so
+2:12:39
+he based his philosophy on rational materialism in which all workers unite to overthrow the
+2:12:44
+exploitative class and everyone lives in harmony and peace and nobody starves. For Marx, not
+2:12:50
+only communism was desirable, it was also historically inevitable because for him history
+2:12:56
+was moving towards perfection, through incremental improvement or dialectical change as Hegel
+2:13:03
+said. For example feudalism was an improvement on hunter-gatherer societies, Capitalism was
+2:13:08
+an improvement on feudalism, socialism an improvement on capitalism, and finally communism
+2:13:14
+an improvement on socialism. And for Marx, communism was the final phase of human history.
+2:13:19
+You couldn’t make it any better. Just like heaven, you cannot create a heaven that’s better than another heaven. Or maybe you could, but generally heavens tend to mean perfection. If
+2:13:29
+they do exist of course. Marx’s class-based analysis had deep communitarian roots or group-based, as a result it failed
+2:13:37
+in a highly individualised Europe, despite many attempts. For example in the 1870s Paris
+2:13:43
+had a socialist revolution but it didn’t stick. Marxism found fertile soil in countries
+2:13:49
+with a strong communitarian bond, like Russia and China, so the 20th century witnessed many Marxist revolutions to move  history in the right direction. These attempts had partial
+2:13:59
+success, but ultimately failed to create a communist utopia.  So Hegel talked about history in motion, Marx talked about how to speed up that historical
+2:14:08
+motion. Both Hegel and Marx saw things from a society’s perspective. Now I will discuss
+2:14:13
+how this history-based philosophy applies to a person’s own individual history, from
+2:14:18
+birth to death. If a society has a history, so does an individual.  Jean-Paul Sartre who lived between 1905 and 1980 was a French existentialist philosopher.
+2:14:29
+He was not a Marxist but was hugely influenced by Marx and other Marxists, especially the Maoist movement in France. Hegel and Marx both agreed that humans are not only the products
+2:14:39
+of history, but we humans also serve the purpose of history. Hegel explained reality through
+2:14:45
+a god-like spirit or idea, and Marx explained through historical materialism and class struggle.
+2:14:51
+In other words, both argued that we individuals are here to serve a grander mission or purpose,
+2:14:56
+be it god or history or class struggle or general society.  But what’s the purpose of individual human life? Sartre’s existentialist philosophy
+2:15:06
+argued that human life has no purpose because we are made neither by god, nor by the blind force of history as Marx and Hegel outlined, instead we are made by our own history, choices
+2:15:16
+we make in our own life. In other words, we have no essence or purpose from birth, we simply acquire it though our life, often through our own free choices and actions. Since we
+2:15:27
+have no pre-ordained purpose set for us by some other power, like god or society, we
+2:15:32
+are free to make mistakes to find our own purpose.  Sartre goes even further by saying that we are condemned to be free and condemned to
+2:15:40
+make mistakes but this freedom comes with … you guessed it as uncle Ben said, it comes
+2:15:46
+with responsibility. In other words, we are our own makers, we craft our own self identity,
+2:15:53
+therefore we have to live with what we make of ourselves. Unlike Hegel and Marx, Sartre
+2:15:59
+liberates individuals from the constraints of god, history, traditions, class and even human nature. So today, a new trend among homo sapiens is transgenderism, the idea that
+2:16:09
+you can define your own gender identity based on your own feelings. People feel they are
+2:16:15
+in the wrong body and they change their gender in an attempt to correct the incorrect. This might have been difficult in the pre-existentialist era, but now it is widely accepted in most
+2:16:25
+of the developed world that you can decide what your identity is. Instead of your biology,
+2:16:31
+society’s history, tradition or norms defining you, you have the full control to make yourself
+2:16:36
+and find your own life’s purpose. As I said, with this freedom, comes responsibility. If
+2:16:42
+you make mistakes, you have to own those mistakes. Don’t blame others. In other words, if you
+2:16:47
+build a bridge and it collapses, you’re responsible. In the same way, you build your own identity and if something goes wrong, you cannot blame others for it. So Jean-Paul
+2:16:57
+Sartre’s existentialist philosophy gave the individual the full autonomy to make something of themselves. For him it wasn’t social history, but your own individual history that
+2:17:07
+makes you. You own free choices.  Slavoj Zizek was born in Slovenia in 1949. Today, he is the most important figure who
+2:17:17
+subscribes to a history-based philosophy. He identifies himself as a Hegelian who argues
+2:17:22
+that Marxism has failed miserably because most Marxists today live in the past, too
+2:17:28
+attached to history. Today’s Marxists blame history for their failure. In other words,
+2:17:33
+he says that Marxists today have lost touch with reality and live in the past like an old man who has failed in his life projects. This failure is most visible in his own style
+2:17:44
+as he uses comedy to cope with that failure. His philosophy is based on a philosophical
+2:17:49
+irony. Marxists believe in history and historical struggle. The very history that these philosophers
+2:17:54
+based their ideas failed their attempt to create a truly socialist society. So history
+2:18:00
+failed a philosophical tradition that based its core philosophy on history. Now that’s
+2:18:05
+ironic. And so on and so on and so on. You get the point.   So to sum up, Hegel said we are the product of history that keeps progressing and Marx
+2:18:15
+said let’s not study history but let’s speed it up to get our final destination:
+2:18:20
+a communist utopia. Sartre argues forget about class history, we are the product of our own
+2:18:26
+individual history in which we also find our purpose, and finally Zizek says history has
+2:18:32
+failed us all. We have not progressed but regressed. So our history is nothing but a
+2:18:37
+history of failed intelligence or rationality.  Next, I will discuss the other strand of philosophy that came out of Kant through Schopenhauer,
+2:18:44
+Kierkegaard, and Nietzsche which emphasizes not rationality or history or society, but
+2:18:50
+passion, or will or human psyche, the mysterious subconscious world of psychological philosophy. 
+2:18:55
+Psychological Philosophy: Schopenhauer vs Kierkegaard vs Nietzsche vs Peterson [Passion Motivates Us] Previously I discussed the branch of philosophy
+2:19:02
+that put emphasis on historical and social change as the main motivating factors for
+Schopenhauer vs Kierkegaard vs Nietzsche
+2:19:07
+human actions. For example philosophers like Hegel, Marx and Sartre argued that we are
+2:19:13
+the product of history, either society’s history or our own personal history. In this
+2:19:18
+segment, I will focus on the other branch of philosophy that’s based on the individual human psyche or the blind will that drives human actions. In other words, it is not history
+2:19:28
+or society but some other mysterious forces inside us, like passion and the blind subconscious
+2:19:34
+will.  The German philosopher, Arthur Schopenhauer who lived between 1788 and 1860 was firmly
+2:19:40
+against Hegel’s philosophy. Schopenhauer took Kant’s distinction between the knowable
+2:19:46
+world of phenomena and the unknowable world of noumena to develop his own theory of Will
+2:19:51
+and Representation. Schopenhauer argued that there is no distinction between the two worlds, they are one and the same thing or two sides of the same coin. He said there is one world,
+2:20:01
+which he called it will. But this will is mysterious and hard to understand. It’s
+2:20:07
+built-in inside us. In other words, all living beings and even non-living beings come pre-assembled
+2:20:13
+or pre-installed with this blind will. Since it’s built-in inside each being, we cannot
+2:20:19
+fully know. We can only know how it is represented or manifested to us, but not the will itself.
+2:20:25
+The will itself is hidden from us, all we see is its mere representation. 
+2:20:30
+For Schopenhauer, will is the blind driving force in the universe and representation is our perception of that blind will. In other words, will is the essence of the universe
+2:20:40
+and we only see or understand its manifestation in us. He called it will to life. Or passion
+2:20:46
+for life that we share with all living beings, including animals and plants. We all have
+2:20:53
+an innate will to continue living. Since the will is blind and universal, we each become
+2:20:59
+its eye through which it looks out to the world. Will is like a gigantic iceberg while
+2:21:05
+our human intellect or human perception of it is only the tip of that iceberg. So Schopenhauer
+2:21:11
+really went deeply psychological about human motivation.  Schopenhauer says it is impossible to know the will, because as soon as you observe it,
+2:21:18
+it becomes a representation of that will. If you do not observe it, then it is the will. It’s like in quantum mechanics, your observation of a particle changes the position of the
+2:21:29
+particle. In other words, if you don’t look, it is there, but as soon as you look, it changes
+2:21:34
+position. So it is a kind of catch 22. To understand Schopenhauer’s idea of the will
+2:21:40
+is to imagine everything in the universe is one thing, let’s say atoms that oscillate
+2:21:45
+between everything that exists. It appears to us as something that is not the genuine
+2:21:50
+thing, but a mere representation.  To fully understand Schopenhauer’s will, it is important to mention the Buddhist idea
+2:21:57
+of the self as an illusion or mirage. For the Buddhists soul is universal but the self
+2:22:03
+is a mere mirage we acquire in our lifetime. In other words our essence is not the self
+2:22:09
+we call me or I. Schopenhauer too, places the blind will at a much deeper place than
+2:22:14
+we can understand and we only get a representation of it.  He also said that this will is the cause of our human suffering, therefore Schopenhauer
+2:22:23
+is often considered the father of pessimism. Just like in Buddhism our ego desires things
+2:22:30
+and those desires make us suffer, because we can never satisfy our desires fully. Schopenhauer
+2:22:36
+says since we have a body, we have a will that somehow controls us and that causes suffering,
+2:22:43
+so we are all at the mercy of this blind will that urges us to do things. The only way to
+2:22:48
+cope with this suffering is through intellect and art which allow us to move to a state of non-existence like the Buddhist nirvana. Artists while creating art as well as us while
+2:23:00
+enjoying that art, we all experience a moment of non-being while in awe of its beauty. When
+2:23:07
+an art takes our breath away, we truly experience non-existence, a kind of blissful moment.
+2:23:13
+Schopenhauer influenced the German composer Richard Wagner whose music represents Schopenhauer’s
+2:23:19
+philosophy. For Schopenhauer music didn’t represent the phenomenal world, therefore
+2:23:24
+it was free from the will and urges, instead it fostered compassion. Schopenhauer had a
+2:23:30
+massive influence on novelists and musicians of the 19th century. He also influenced psychoanalysts,
+2:23:36
+especially Sigmund Freud and Carl Jung. Schopenhauer also dismissed the idea of god and replaced
+2:23:43
+god with the blind will and this had an influence on our next philosopher.  The Danish philosopher Soren Kierkegaard lived between 1813 and 1855. He argued that our
+2:23:56
+anxiety comes from our choices or in other words our belief in complete freedom to make
+2:24:01
+such choices. In a world where everyone believes in god, where everything is caused by god,
+2:24:07
+people accept it because there is no other choice. In other words, God tells you what to do and what not to do. You have no choice of your own. 
+2:24:14
+But we live in a world, where we no longer believe in god, so we have the freedom to choose. But this freedom comes at a massive psychological cost. It makes us anxious about
+2:24:24
+our choices and the consequences of those choices. When we are children, we live a care-free
+2:24:30
+life because our parents take care of everything. In the same way, a god fearing society also
+2:24:35
+lives in a kind of blissful ignorance. Since god is dead, or when parents die, we are responsible
+2:24:42
+to make our own choices. The psychological toll of making choices is immense on us. For
+2:24:48
+example, Hamlet agonizes over the question of “To be or not to be” in Shakespeare’s
+2:24:54
+play. Incidentally Hamlet was also a Dane like Kierkegaard.  In the 19th century, hysteria was very prevalent, especially among women. Today, anxiety is
+2:25:03
+more common, among both men and women. So absolute freedom makes us anxious. Kierkegaard
+2:25:09
+himself never lost faith in god, but he saw freedom as good and bad. While it makes us
+2:25:14
+anxious and dizzy, it also allows us to make good moral choices. His problem with Hegel’s
+2:25:20
+theory of history was that it gave little room for individual freedom because we are bound by the historical force. In fact we suffer, not because of the bigger forces in
+2:25:30
+society, but we suffer through our own actions or choices we make as individuals. 
+2:25:36
+So Schopenhauer said the blind will motivates us while leaving us with minimum freedom of
+2:25:41
+our own and Kierkegaard said that little freedom induces anxiety in us. Now these two philosophers
+2:25:48
+come together in our next philosopher.  The German philosopher, Friedrich Nietzsche lived between 1844 and 1900. He was a great
+2:25:59
+admirer of Schopenhauer. He accepted Schopenhauer’s idea of the will, but he had a big problem
+2:26:05
+with how passive this will to life was. Nietzsche argued that this will, blind it may be, can
+2:26:11
+be harnessed and utilized for great purposes, artistic genius and philosophical flourishing.
+2:26:17
+He changed the passive “will to life” into a proactive “will to power”. In other
+2:26:22
+words, we are not here to just live, but we are here to grow, conquer and dominate. Nature
+2:26:28
+is based on competition not a state of blissfulness or mere survival.
+2:26:34
+Nietzsche saw religions, especially its morality as the biggest obstacle for individuals to push boundaries in order to achieve greatness. Morality decides what’s good and what’s
+2:26:43
+bad, so society promotes certain values and restricts others. Nietzsche saw this as a
+2:26:48
+weak-minded way of living that promoted a weak or slave mentality. He instead proposed
+2:26:53
+a more nature-based approach, in which no morality can restrict innovation, probing,
+2:26:59
+artistic creativity and philosophical ideas. Nature wants to grow, dominate, while religions
+2:27:05
+suppress and tame people.  Nietzsche proposed the idea of ubermensch, a being who has surpassed humanity into something
+2:27:12
+else, a free spirit artist or a philosophical genius. He’s no longer bound by social values
+2:27:19
+and norms because he has shed his human qualities of weakness, slave mentality and religious
+2:27:25
+compassion. He is released from all that into a state of enormous creative energy and exuberance
+2:27:30
+for life.  Nietzsche saw western philosophy championing rationality at the expense of passion and
+2:27:36
+emotions. For him passion was as important as reason. Reason is just a tool, it provides
+2:27:42
+us with technology that makes life easier and more comfortable. But reason cannot motivate
+2:27:47
+us to do things that are daring and courageous. Instead rationality makes us risk-averse.
+2:27:54
+This timidness leads us to hedonism in which we only seek pleasure and avoid pain. This
+2:28:00
+is a kind of nihilistic self-indulgence that makes you lazy and self-centred. 
+2:28:05
+Human passion, on the other hand, motivates us to do things, conquer the world and topple mountains. So Nietzsche’s philosophy was based on human passion or the will to power
+2:28:14
+to surpass the current humans into a great genius. Nietzsche didn’t believe in equality
+2:28:20
+either, because only a handful of people could become great artists and genius philosophers.
+2:28:25
+Not everyone has original ideas.  So Schopenhauer placed human motivation on the blind innate will, while Kierkegaard said
+2:28:34
+our anxiety comes from the little freedom we experience and Nietzsche argued we are driven by will to power or passion to push society forward and innovate. 
+2:28:44
+Today, sociology and psychology have replaced philosophy when it comes to human motivation.
+2:28:50
+One of the leading voices of psychology is Jordan Peterson was born in 1962 and has adopted
+2:28:57
+YouTube as his platform. Another contemporary voice is the Indian yogi Sadhguru. Peterson
+2:29:03
+believes in human passion and faith telling young people to take individual responsibility.
+2:29:09
+Unlike Zizek, Peterson doesn’t see the world through group identity like class, or gender
+2:29:14
+but through the lens of the individual. His idea of perception is somewhat similar to Schopenhauer’s will and representation. 
+2:29:21
+Sadhguru, an Indian yogic guru, on the other hand, argues that today’s world is shaped
+2:29:26
+by materialism and people have conflated the desire for more with happiness. Our goal is
+2:29:32
+no longer happiness, but to have more. He argues it is time we reach a higher level
+2:29:37
+of intelligence so we are in charge of our body, not our bodily desires in charge of
+2:29:43
+our mind. He argues that modern society, even science, has become a slave to human bodily
+2:29:48
+desires to make us more comfortable. As a result it has blinded us from other possibilities
+2:29:54
+of human intelligence or human consciousness to reach higher places.  
+2:30:00
+So to sum up, Schopenhauer said we are driven by a universal will or passion for which we have no control and this causes us to suffer and art is our best cure for suffering. Kierkegaard
+2:30:11
+argued that our anxiety or suffering is also caused by our freedom of choices in life, which kind of negates Schopenhauer’s blind will. Nietzsche said, this human passion that
+2:30:21
+causes us suffering is also a great tool to do something, create something and become
+2:30:27
+greater than ourselves. Peterson says to ease suffering is to take responsibility and make
+2:30:32
+something of your individual life instead of blaming others. Sadhguru argues for a new
+2:30:38
+form of human consciousness that goes beyond the material world. 
+2:30:44
+So to sum up, human philosophy in the last 2500 years has tried to answer many different
+2:30:49
+questions. Early Greeks tried empirical knowledge to explain the world while early eastern philosophers
+2:30:55
+tried to psychologically cope with the problem of existence. Then later philosophers tried
+2:31:01
+to explain life’s purpose, with the humanists focusing on the equality among humans, while
+2:31:06
+the elitists or political realists emphasized competition to push society forward. Then
+2:31:12
+Kant brought rationalism and empiricism together and the next generations of Germans took him in two separate directions, Hegel went historical saying we are made by history while Schopenhauer
+2:31:23
+went deeper into the human psyche saying we are made by a blind will. Perhaps today we are moving towards a new philosophy that is not based on reason but human intuition. 
+2:31:32
+Conclusion: Coursework To sum up this video, In part 1, I discussed
+2:31:38
+how human’s knowledge of death and the rise of rational thinking gave rise to human philosophy
+2:31:43
+in an attempt to answer some of life’s fundamental questions like the meaning of life, the nature
+2:31:48
+of reality and the function of the human mind. Then over time each of those topics became
+2:31:54
+a discipline of its own and philosophy gave birth to physics, biology and psychology.
+2:31:59
+Physics focused on reality. Biology on life. And psychology on the human mind. Later I
+2:32:04
+looked at the various branches of philosophy such as ontology, epistemology, rationalism, empiricism, humanism, utilitarianism, existentialism, postmodernism and more. 
+2:32:14
+In part 2, I discussed how eastern philosophy was based around rivers and agriculture, therefore,
+2:32:19
+spirituality and fatalism became the dominant philosophical ideas. Western philosophy, on
+2:32:25
+the other hand, was based on oceans and trade which focused more on rational thinking. The fundamental difference is that eastern philosophy emphasizes changing oneself while western
+2:32:35
+philosophy wants to change the world. I discussed how the Greek giants of Socrates, Plato and
+2:32:40
+Aristotle questioned dogma and promoted rational thinking. While the eastern trio of the Buddha, Lao Tzu and Confucius showed how not to change nature, but become one with nature by changing
+2:32:51
+yourself.  In part 3, I discussed the purpose of human civilisation and human life. Elitism sees
+2:32:56
+society as a competition ground while egalitarianism promotes equality. Philosophers such as Sun
+2:33:03
+Tsu, Machiavelli, Thomas Hobbes saw humans as animals so they offered a hierarchical social system to mimic nature, where the most adept survive. Philosophers such as Jean-Jacque
+2:33:14
+Rousseau, and Voltaire promoted equality instead. On the question of knowledge or happiness, Erasmus, Montaigne, and Bertrand Russell argued one should prioritise happiness, while philosophers
+2:33:25
+such as Francis Bacon, Heidegger, and Foucault prioritised knowledge to better one’s life
+2:33:30
+and understand the nature of society.  In part 4, I tackled the question of knowledge by discussing rationalism and empiricism.
+2:33:38
+Rationalists see knowledge as innate inside us while empiricists see knowledge only coming from outside experience. Kant provided a middle ground saying we have innate mental structures
+2:33:49
+that we put out to the world to give us a more structured understanding of the world. In other words, we are not passive receivers but active organisers of the world. I also
+2:33:59
+discussed what shapes us and motivates our action. Hegel and Marx’s history-based philosophy
+2:34:04
+argued we are the product of history and Jean-Paul Sartre who said we are the product of our own individual history. On the psychological side, we saw Schopenhauer who placed human
+2:34:14
+motivation in the subconscious blind will. Kierkegaard focused on how freedom creates
+2:34:19
+its anxiety. Nietzsche said we can channel the blind will and use this anxiety to create
+2:34:24
+art. If you have made it to this point, a huge kudos to you. So my question to you. Which
+2:34:32
+philosophy or philosopher resonated with you the most? Or a more interesting question is,
+2:34:38
+where do you see philosophy heading? As always I appreciate you accompanying on this long journey.
